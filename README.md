@@ -49,14 +49,17 @@ pacman -S mingw-w64-x86_64-gcc flex bison make
 ## Building
 
 ```bash
-# Build the compiler
+# Build the compiler + lexer driver
 make
 
 # Clean generated files
 make clean
 ```
 
-This produces the `mini_compiler` executable.
+This produces two executables:
+
+- `mini_compiler` — parses a program and prints the symbol table.
+- `lexer_tokens` — runs only the lexer and prints every token with lexemes.
 
 ---
 
@@ -66,7 +69,10 @@ This produces the `mini_compiler` executable.
 # Parse a source file
 ./mini_compiler <source_file.c>
 
-# Run against the included test file
+# Tokenize only (lexer demo)
+./lexer_tokens <source_file.c>
+
+# Run parser + lexer on the default sample
 make test
 ```
 
@@ -86,10 +92,24 @@ pi             float     variable    14      0
 Parsing completed successfully. No errors found.
 ```
 
+**Example output (lexer only):**
+
+```
+Tokenizing 'test.c'...
+Line  | Token                  | Lexeme
+------------------------------------------------------------
+1     | TOKEN_INT              | int
+1     | TOKEN_IDENTIFIER       | globalCount
+1     | TOKEN_SEMICOLON        | ;
+...
+------------------------------------------------------------
+Lexical analysis completed.
+```
+
 **Example output (invalid program):**
 
 ```
-Syntax Error (line 7): syntax error near 'int'
+Syntax Error (line 9): syntax error near 'int'
 Parsing finished with 1 error(s).
 ```
 
@@ -275,12 +295,25 @@ Syntax Error (line 7): syntax error near 'int'
 
 ```
 mini-c-compiler/
-├── lexer.l            # Flex lexical analyzer definitions
-├── parser.y           # Bison grammar rules
-├── symbol_table.h     # Symbol table header
-├── symbol_table.cpp   # Symbol table implementation
-├── Makefile           # Build automation
-├── test.c             # Valid syntax test file
-├── test_invalid.c     # Invalid syntax test file
-└── README.md          # This file
+├── lexer.l                        # Flex lexical analyzer definitions
+├── parser.y                       # Bison grammar rules
+├── symbol_table.h / .cpp          # Symbol table implementation
+├── lexer_driver.cpp               # Standalone lexer demo
+├── Makefile                       # Build automation
+├── test.c                         # Valid syntax showcase
+├── test_invalid.c                 # Mixed invalid constructs
+├── test_invalid_control.c         # Control-flow syntax errors
+├── test_invalid_declarations.c    # Declaration errors
+├── test_invalid_expressions.c     # Expression errors
+├── test_invalid.c                 # Simple invalid example
+├── DEMO.md                        # Copy/paste demo commands
+└── README.md                      # This file
 ```
+
+### Sample Input Files
+
+- `test.c` – comprehensive valid program exercising declarations, control flow, functions, unary/binary operators, and scopes.
+- `test_invalid.c` – compact invalid cases (missing braces, bad operators).
+- `test_invalid_control.c` – malformed if/else/loops and missing braces.
+- `test_invalid_declarations.c` – declaration/redeclaration and initializer issues.
+- `test_invalid_expressions.c` – malformed expressions and operators.

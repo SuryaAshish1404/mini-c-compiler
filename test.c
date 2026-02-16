@@ -13,9 +13,33 @@
 int globalCount;
 float pi = 3.14;
 
+// Additional global helpers
+float mix(float lhs, float rhs) {
+    float total = lhs + rhs;
+    return total / 2.0;
+}
+
+void spin_counter() {
+    int loops = 3;
+    while (loops > 0) {
+        loops--;
+    }
+    return;
+}
+
 // Function with parameters
-int add(int a, int b) {
-    return a + b;
+int add(int leftOperand, int rightOperand) {
+    return leftOperand + rightOperand;
+}
+
+int max_pair(int leftValue, int rightValue) {
+    int bigger;
+    if (leftValue > rightValue) {
+        bigger = leftValue;
+    } else {
+        bigger = rightValue;
+    }
+    return bigger;
 }
 
 // Function demonstrating control flow
@@ -41,6 +65,12 @@ int main() {
         counter++;
     }
 
+    // Nested block scope
+    {
+        int shadow = 5;
+        result += shadow;
+    }
+
     // For loop
     int sum = 0;
     for (int i = 0; i < 10; i++) {
@@ -54,8 +84,11 @@ int main() {
         }
     }
 
-    // Function call
+    // Function calls
     int total = add(x, y);
+    int bigger = max_pair(total, result);
+    float midpoint = mix(pi, 2.5);
+    spin_counter();
 
     // Unary operators
     int neg = -x;
@@ -67,24 +100,8 @@ int main() {
     total *= 2;
     total /= 3;
 
+    int midpointRounded = midpoint;
+    bigger += midpointRounded;
+
     return 0;
 }
-
-/* ----- Invalid Syntax (uncomment to test error reporting) -----
-
-// Missing semicolon
-int bad_var
-
-// Missing closing parenthesis
-if (x > 10 {
-    x = 5;
-}
-
-// Invalid operator
-int z = x @ y;
-
-// Missing closing brace
-int broken() {
-    int a = 1;
-
------ End of Invalid Syntax ----- */

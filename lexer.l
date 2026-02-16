@@ -4,7 +4,7 @@
 #include <cstring>
 #include <string>
 #include <iostream>
-#include "parser.tab.h"
+#include "parser.tab.hpp"
 
 void report_lexical_error(const char* text, int line);
 %}

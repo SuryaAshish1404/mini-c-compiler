@@ -1,6 +1,7 @@
 %{
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 #include <iostream>
 #include "symbol_table.h"
@@ -168,6 +169,7 @@ selection_statement
 iteration_statement
     : TOKEN_WHILE TOKEN_LPAREN expression TOKEN_RPAREN statement
     | TOKEN_FOR TOKEN_LPAREN expression_statement expression_statement expression TOKEN_RPAREN statement
+    | TOKEN_FOR TOKEN_LPAREN variable_declaration expression_statement expression TOKEN_RPAREN statement
     ;
 
 return_statement
