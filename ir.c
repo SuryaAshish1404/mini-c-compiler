@@ -1,6 +1,5 @@
 #include "ir.h"
 
-// Create an IR list
 IRList* create_ir_list() {
     IRList *list = (IRList*)malloc(sizeof(IRList));
     list->head = NULL;
@@ -9,7 +8,6 @@ IRList* create_ir_list() {
     return list;
 }
 
-// Append an IR instruction to the list
 void append_ir(IRList *list, IR *instruction) {
     if (!list || !instruction) return;
     
@@ -25,7 +23,6 @@ void append_ir(IRList *list, IR *instruction) {
     list->count++;
 }
 
-// Free IR list
 void free_ir_list(IRList *list) {
     if (!list) return;
     
@@ -39,7 +36,6 @@ void free_ir_list(IRList *list) {
     free(list);
 }
 
-// Create a basic IR instruction
 IR* create_ir(IROpcode opcode) {
     IR *ir = (IR*)malloc(sizeof(IR));
     memset(ir, 0, sizeof(IR));
@@ -49,7 +45,6 @@ IR* create_ir(IROpcode opcode) {
     return ir;
 }
 
-// Create an assignment IR
 IR* create_ir_assign(const char *result, const char *arg1) {
     IR *ir = create_ir(IR_ASSIGN);
     strcpy(ir->op, "=");
@@ -58,7 +53,6 @@ IR* create_ir_assign(const char *result, const char *arg1) {
     return ir;
 }
 
-// Create a binary operation IR
 IR* create_ir_binary(IROpcode opcode, const char *result, const char *arg1, const char *arg2) {
     IR *ir = create_ir(opcode);
     strncpy(ir->result, result, sizeof(ir->result) - 1);
@@ -85,7 +79,6 @@ IR* create_ir_binary(IROpcode opcode, const char *result, const char *arg1, cons
     return ir;
 }
 
-// Create a unary operation IR
 IR* create_ir_unary(IROpcode opcode, const char *result, const char *arg1) {
     IR *ir = create_ir(opcode);
     strncpy(ir->result, result, sizeof(ir->result) - 1);
@@ -100,7 +93,6 @@ IR* create_ir_unary(IROpcode opcode, const char *result, const char *arg1) {
     return ir;
 }
 
-// Create a LOAD IR instruction
 IR* create_ir_load(const char *result, const char *array, const char *index) {
     IR *ir = create_ir(IR_LOAD);
     strcpy(ir->op, "LOAD");
@@ -110,7 +102,6 @@ IR* create_ir_load(const char *result, const char *array, const char *index) {
     return ir;
 }
 
-// Create a STORE IR instruction
 IR* create_ir_store(const char *array, const char *index, const char *value) {
     IR *ir = create_ir(IR_STORE);
     strcpy(ir->op, "STORE");
@@ -120,7 +111,6 @@ IR* create_ir_store(const char *array, const char *index, const char *value) {
     return ir;
 }
 
-// Create a label IR
 IR* create_ir_label(int label_num) {
     IR *ir = create_ir(IR_LABEL);
     strcpy(ir->op, "LABEL");
@@ -129,7 +119,6 @@ IR* create_ir_label(int label_num) {
     return ir;
 }
 
-// Create a GOTO IR
 IR* create_ir_goto(int label_num) {
     IR *ir = create_ir(IR_GOTO);
     strcpy(ir->op, "GOTO");
@@ -138,7 +127,6 @@ IR* create_ir_goto(int label_num) {
     return ir;
 }
 
-// Create an IF IR instruction
 IR* create_ir_if(IROpcode opcode, const char *condition, int label_num) {
     IR *ir = create_ir(opcode);
     strcpy(ir->op, opcode == IR_IF_FALSE ? "IF_FALSE" : "IF_TRUE");
@@ -148,7 +136,6 @@ IR* create_ir_if(IROpcode opcode, const char *condition, int label_num) {
     return ir;
 }
 
-// Create FOR_BEGIN IR
 IR* create_ir_for_begin(const char *var, const char *start, const char *end) {
     IR *ir = create_ir(IR_FOR_BEGIN);
     strcpy(ir->op, "FOR");
@@ -158,14 +145,12 @@ IR* create_ir_for_begin(const char *var, const char *start, const char *end) {
     return ir;
 }
 
-// Create FOR_END IR
 IR* create_ir_for_end() {
     IR *ir = create_ir(IR_FOR_END);
     strcpy(ir->op, "END_FOR");
     return ir;
 }
 
-// Create CALL IR
 IR* create_ir_call(const char *result, const char *func_name, int num_args) {
     IR *ir = create_ir(IR_CALL);
     strcpy(ir->op, "CALL");
@@ -177,7 +162,6 @@ IR* create_ir_call(const char *result, const char *func_name, int num_args) {
     return ir;
 }
 
-// Create RETURN IR
 IR* create_ir_return(const char *value) {
     IR *ir = create_ir(IR_RETURN);
     strcpy(ir->op, "RETURN");
@@ -187,7 +171,6 @@ IR* create_ir_return(const char *value) {
     return ir;
 }
 
-// Get opcode string
 const char* ir_opcode_to_string(IROpcode opcode) {
     switch (opcode) {
         case IR_ASSIGN: return "ASSIGN";
@@ -221,7 +204,6 @@ const char* ir_opcode_to_string(IROpcode opcode) {
     }
 }
 
-// Print a single IR instruction
 void print_ir(IR *instruction) {
     if (!instruction) return;
     

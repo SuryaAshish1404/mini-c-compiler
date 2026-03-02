@@ -1,6 +1,5 @@
 #include "ast.h"
 
-// Create a basic AST node
 ASTNode* create_node(ASTNodeType type) {
     ASTNode *node = (ASTNode*)malloc(sizeof(ASTNode));
     if (!node) {
@@ -19,7 +18,6 @@ ASTNode* create_node(ASTNodeType type) {
     return node;
 }
 
-// Create a binary operation node
 ASTNode* create_binary_node(ASTNodeType type, OperatorType op, ASTNode *left, ASTNode *right) {
     ASTNode *node = create_node(type);
     node->op = op;
@@ -28,7 +26,6 @@ ASTNode* create_binary_node(ASTNodeType type, OperatorType op, ASTNode *left, AS
     return node;
 }
 
-// Create a unary operation node
 ASTNode* create_unary_node(ASTNodeType type, OperatorType op, ASTNode *operand) {
     ASTNode *node = create_node(type);
     node->op = op;
@@ -36,35 +33,30 @@ ASTNode* create_unary_node(ASTNodeType type, OperatorType op, ASTNode *operand) 
     return node;
 }
 
-// Create an identifier node
 ASTNode* create_identifier_node(const char *name) {
     ASTNode *node = create_node(AST_IDENTIFIER);
     strncpy(node->name, name, sizeof(node->name) - 1);
     return node;
 }
 
-// Create an integer number node
 ASTNode* create_number_node(int value) {
     ASTNode *node = create_node(AST_NUMBER);
     node->int_value = value;
     return node;
 }
 
-// Create a float number node
 ASTNode* create_float_node(double value) {
     ASTNode *node = create_node(AST_FLOAT_NUMBER);
     node->float_value = value;
     return node;
 }
 
-// Create a string literal node
 ASTNode* create_string_node(const char *value) {
     ASTNode *node = create_node(AST_STRING);
     strncpy(node->string_value, value, sizeof(node->string_value) - 1);
     return node;
 }
 
-// Create a tensor declaration node
 ASTNode* create_tensor_decl_node(const char *name, int *shape, int dims) {
     ASTNode *node = create_node(AST_TENSOR_DECL);
     strncpy(node->name, name, sizeof(node->name) - 1);
@@ -76,7 +68,6 @@ ASTNode* create_tensor_decl_node(const char *name, int *shape, int dims) {
     return node;
 }
 
-// Create a tensor operation node
 ASTNode* create_tensor_op_node(ASTNodeType type, ASTNode *left, ASTNode *right) {
     ASTNode *node = create_node(type);
     node->left = left;
@@ -84,7 +75,6 @@ ASTNode* create_tensor_op_node(ASTNodeType type, ASTNode *left, ASTNode *right) 
     return node;
 }
 
-// Create an assignment node
 ASTNode* create_assignment_node(ASTNode *lhs, ASTNode *rhs) {
     ASTNode *node = create_node(AST_ASSIGNMENT);
     node->left = lhs;
@@ -92,7 +82,6 @@ ASTNode* create_assignment_node(ASTNode *lhs, ASTNode *rhs) {
     return node;
 }
 
-// Create an if statement node
 ASTNode* create_if_node(ASTNode *condition, ASTNode *then_branch, ASTNode *else_branch) {
     ASTNode *node = create_node(AST_IF_STMT);
     node->condition = condition;
@@ -101,7 +90,6 @@ ASTNode* create_if_node(ASTNode *condition, ASTNode *then_branch, ASTNode *else_
     return node;
 }
 
-// Create a while loop node
 ASTNode* create_while_node(ASTNode *condition, ASTNode *body) {
     ASTNode *node = create_node(AST_WHILE_STMT);
     node->condition = condition;
@@ -109,7 +97,6 @@ ASTNode* create_while_node(ASTNode *condition, ASTNode *body) {
     return node;
 }
 
-// Create a for loop node
 ASTNode* create_for_node(ASTNode *init, ASTNode *condition, ASTNode *update, ASTNode *body) {
     ASTNode *node = create_node(AST_FOR_STMT);
     node->init = init;
@@ -119,14 +106,12 @@ ASTNode* create_for_node(ASTNode *init, ASTNode *condition, ASTNode *update, AST
     return node;
 }
 
-// Create a return statement node
 ASTNode* create_return_node(ASTNode *expr) {
     ASTNode *node = create_node(AST_RETURN_STMT);
     node->left = expr;
     return node;
 }
 
-// Create a function call node
 ASTNode* create_function_call_node(const char *name, ASTNode *args) {
     ASTNode *node = create_node(AST_FUNCTION_CALL);
     strncpy(node->name, name, sizeof(node->name) - 1);
@@ -134,7 +119,6 @@ ASTNode* create_function_call_node(const char *name, ASTNode *args) {
     return node;
 }
 
-// Create a variable declaration node
 ASTNode* create_variable_decl_node(const char *type, const char *name, ASTNode *init) {
     ASTNode *node = create_node(AST_VARIABLE_DECL);
     strncpy(node->data_type, type, sizeof(node->data_type) - 1);
@@ -143,7 +127,6 @@ ASTNode* create_variable_decl_node(const char *type, const char *name, ASTNode *
     return node;
 }
 
-// Create a function declaration node
 ASTNode* create_function_decl_node(const char *return_type, const char *name, 
                                     ASTNode *params, ASTNode *body) {
     ASTNode *node = create_node(AST_FUNCTION_DECL);
@@ -154,7 +137,6 @@ ASTNode* create_function_decl_node(const char *return_type, const char *name,
     return node;
 }
 
-// Create a list node (for statements, declarations, etc.)
 ASTNode* create_list_node(ASTNodeType type) {
     ASTNode *node = create_node(type);
     node->children_capacity = 4;
@@ -163,7 +145,6 @@ ASTNode* create_list_node(ASTNodeType type) {
     return node;
 }
 
-// Add a child to a list node
 void add_child(ASTNode *parent, ASTNode *child) {
     if (!parent || !child) return;
     
@@ -182,7 +163,6 @@ void add_child(ASTNode *parent, ASTNode *child) {
     parent->children[parent->num_children++] = child;
 }
 
-// Print operator
 static const char* op_to_string(OperatorType op) {
     switch (op) {
         case OP_ADD: return "+";
@@ -205,7 +185,6 @@ static const char* op_to_string(OperatorType op) {
     }
 }
 
-// Print AST node type
 static const char* node_type_to_string(ASTNodeType type) {
     switch (type) {
         case AST_PROGRAM: return "Program";
@@ -239,7 +218,6 @@ static const char* node_type_to_string(ASTNodeType type) {
     }
 }
 
-// Print AST with indentation
 void print_ast(ASTNode *node, int indent) {
     if (!node) return;
     
@@ -247,7 +225,6 @@ void print_ast(ASTNode *node, int indent) {
     
     printf("%s", node_type_to_string(node->type));
     
-    // Print additional information based on node type
     switch (node->type) {
         case AST_IDENTIFIER:
         case AST_VARIABLE_DECL:
@@ -286,7 +263,6 @@ void print_ast(ASTNode *node, int indent) {
     
     printf("\n");
     
-    // Print children
     if (node->left) {
         print_ast(node->left, indent + 1);
     }
@@ -330,14 +306,12 @@ void print_ast(ASTNode *node, int indent) {
     }
 }
 
-// Print AST tree (wrapper)
 void print_ast_tree(ASTNode *node) {
     printf("\n===== Abstract Syntax Tree =====\n");
     print_ast(node, 0);
     printf("================================\n\n");
 }
 
-// Free AST recursively
 void free_ast(ASTNode *node) {
     if (!node) return;
     

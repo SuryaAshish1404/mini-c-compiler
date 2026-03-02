@@ -1,7 +1,3 @@
-/* AST and IR Demo Program
- * This demonstrates AST construction and IR generation for tensor operations
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "ast.h"
@@ -11,18 +7,12 @@
 
 SymbolTable sym_table;
 
-// Demo function to build AST for: C = A + B (tensor operation)
 ASTNode* build_tensor_example_ast() {
-    // Create program node
     ASTNode *program = create_list_node(AST_PROGRAM);
-    
-    // Tensor declarations: tensor A[2][2], B[2][2], C[2][2]
     int shape[] = {2, 2};
     add_child(program, create_tensor_decl_node("A", shape, 2));
     add_child(program, create_tensor_decl_node("B", shape, 2));
     add_child(program, create_tensor_decl_node("C", shape, 2));
-    
-    // Create main function
     ASTNode *main_body = create_list_node(AST_STATEMENT_LIST);
     
     // C = A + B
@@ -31,8 +21,6 @@ ASTNode* build_tensor_example_ast() {
                                                  create_identifier_node("B"));
     ASTNode *assignment = create_assignment_node(create_identifier_node("C"), tensor_add);
     add_child(main_body, assignment);
-    
-    // return 0
     add_child(main_body, create_return_node(create_number_node(0)));
     
     ASTNode *main_func = create_function_decl_node("int", "main", NULL, main_body);
@@ -41,7 +29,6 @@ ASTNode* build_tensor_example_ast() {
     return program;
 }
 
-// Demo function for: Z = X * Y (3x3 tensors)
 ASTNode* build_tensor_mul_ast() {
     ASTNode *program = create_list_node(AST_PROGRAM);
     
@@ -66,7 +53,6 @@ ASTNode* build_tensor_mul_ast() {
     return program;
 }
 
-// Demo function for multiple operations
 ASTNode* build_tensor_multi_ast() {
     ASTNode *program = create_list_node(AST_PROGRAM);
     

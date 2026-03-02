@@ -7,32 +7,25 @@
 
 extern "C" {
 
-// Forward declarations
 static char* gen_expr(IRList *ir_list, ASTNode *node, SymbolTable *sym_table);
 static void gen_stmt(IRList *ir_list, ASTNode *node, SymbolTable *sym_table);
 
-// Generate IR for expressions (returns the temporary variable holding the result)
 char* generate_expr_ir(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
     return gen_expr(ir_list, node, sym_table);
 }
 
-// Generate IR for statements
 void generate_stmt_ir(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
     gen_stmt(ir_list, node, sym_table);
 }
 
-// Generate IR for declarations
 void generate_decl_ir(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
     if (!node) return;
     
     switch (node->type) {
         case AST_TENSOR_DECL:
-            // Tensor declarations are handled in symbol table
-            // No IR needed for declaration itself
             break;
             
         case AST_VARIABLE_DECL:
-            // Variable declaration with initialization
             if (node->right) {
                 char *init_val = gen_expr(ir_list, node->right, sym_table);
                 if (init_val) {
@@ -43,7 +36,6 @@ void generate_decl_ir(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
             break;
             
         case AST_FUNCTION_DECL:
-            // Function body
             if (node->body) {
                 gen_stmt(ir_list, node->body, sym_table);
             }
@@ -54,7 +46,6 @@ void generate_decl_ir(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
     }
 }
 
-// Generate IR for expressions
 static char* gen_expr(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
     if (!node) return NULL;
     
@@ -133,13 +124,11 @@ static char* gen_expr(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
         case AST_TENSOR_ADD:
         case AST_TENSOR_SUB:
         case AST_TENSOR_MUL: {
-            // These are handled in assignment context
             free(result);
             return NULL;
         }
         
         case AST_FUNCTION_CALL: {
-            // Generate IR for arguments
             if (node->left && node->left->type == AST_ARG_LIST) {
                 for (int i = 0; i < node->left->num_children; i++) {
                     char *arg = gen_expr(ir_list, node->left->children[i], sym_table);
@@ -166,7 +155,6 @@ static char* gen_expr(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
     }
 }
 
-// Generate IR for statements
 static void gen_stmt(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
     if (!node) return;
     
@@ -188,7 +176,6 @@ static void gen_stmt(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
             break;
             
         case AST_ASSIGNMENT: {
-            // Check if this is a tensor operation
             if (node->right && 
                 (node->right->type == AST_TENSOR_ADD ||
                  node->right->type == AST_TENSOR_SUB ||
@@ -215,7 +202,6 @@ static void gen_stmt(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
                     }
                 }
             } else {
-                // Regular assignment
                 char *rhs = gen_expr(ir_list, node->right, sym_table);
                 if (rhs && node->left && node->left->type == AST_IDENTIFIER) {
                     append_ir(ir_list, create_ir_assign(node->left->name, rhs));
@@ -231,8 +217,6 @@ static void gen_stmt(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
             char else_label[32], end_label[32];
             get_label(else_label, sizeof(else_label));
             get_label(end_label, sizeof(end_label));
-            
-            // IF_FALSE condition GOTO else_label
             IR *if_ir = create_ir(IR_IF_FALSE);
             strcpy(if_ir->op, "IF_FALSE");
             strncpy(if_ir->arg1, cond, sizeof(if_ir->arg1) - 1);
@@ -240,27 +224,22 @@ static void gen_stmt(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
                    sizeof(if_ir->result) - 1);
             append_ir(ir_list, if_ir);
             
-            // Then branch
             gen_stmt(ir_list, node->then_branch, sym_table);
             
             if (node->else_branch) {
-                // GOTO end_label
                 IR *goto_ir = create_ir(IR_GOTO);
                 strcpy(goto_ir->op, "GOTO");
                 strncpy(goto_ir->result, end_label, sizeof(goto_ir->result) - 1);
                 append_ir(ir_list, goto_ir);
                 
-                // else_label:
                 IR *else_label_ir = create_ir(IR_LABEL);
                 strcpy(else_label_ir->op, "LABEL");
                 strncpy(else_label_ir->result, else_label, sizeof(else_label_ir->result) - 1);
                 append_ir(ir_list, else_label_ir);
                 
-                // Else branch
                 gen_stmt(ir_list, node->else_branch, sym_table);
             }
             
-            // end_label:
             IR *end_label_ir = create_ir(IR_LABEL);
             strcpy(end_label_ir->op, "LABEL");
             strncpy(end_label_ir->result, end_label, sizeof(end_label_ir->result) - 1);
@@ -330,14 +309,11 @@ static void gen_stmt(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
     }
 }
 
-// Main IR generation function
 IRList* generate_ir_from_ast(ASTNode *ast, SymbolTable *sym_table) {
     if (!ast) return NULL;
     
     IRList *ir_list = create_ir_list();
     reset_temp_counter();
-    
-    // Handle program node
     if (ast->type == AST_PROGRAM || ast->type == AST_DECLARATION_LIST) {
         if (ast->children) {
             for (int i = 0; i < ast->num_children; i++) {

@@ -127,7 +127,32 @@ for(int i0=0; i0<2; i0++) {
 }
 ```
 
-## 8. Verify Toolchain (optional)
+## 8. Run AST/IR Demo (full tree + IR printout)
+
+```powershell
+./ast_ir_demo
+```
+
+**What you should see:**
+- Three scenarios (2x2 add, 3x3 mul, mixed ops)
+- Each prints the AST tree followed by the IR listing
+- Tensor loops appear as nested `FOR` instructions with `LOAD/STORE`
+
+## 9. Scripted AST/IR Test (PowerShell helper)
+
+```powershell
+./test_ast_ir.ps1
+```
+
+**Purpose:** Sets PATH, rebuilds everything, and runs the AST/IR demo in one step.
+
+## 10. Additional References
+
+- `AST_IR_DOCUMENTATION.md` — architecture write-up with diagrams/examples
+- `output_tensor*.c` — generated tensor C loops from compiler runs
+- `ast_ir_demo.c` — source for the demo scenarios (helpful when presenting)
+
+## 11. Verify Toolchain (optional)
 
 ```powershell
 flex --version
