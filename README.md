@@ -20,11 +20,12 @@ A lexical analyzer and syntax analyzer for a simplified C-like language, built w
 
 ## Overview
 
-This project implements the front-end of a compiler for a minimal C-like language:
+This project implements the front-end of a compiler for a minimal C-like language with **tensor support**:
 
 - **Lexical Analysis** (`lexer.l`) — Tokenizes source code using Flex.
 - **Syntax Analysis** (`parser.y`) — Parses token streams against a context-free grammar using Bison.
 - **Symbol Table** (`symbol_table.h/cpp`) — Stores identifiers with type, scope, and declaration info.
+- **Tensor Operations** — Supports multi-dimensional tensor declarations and element-wise operations (+, -, *) with automatic code generation.
 
 ---
 
@@ -68,6 +69,9 @@ This produces two executables:
 ```bash
 # Parse a source file
 ./mini_compiler <source_file.c>
+
+# Parse and generate code for tensor operations
+./mini_compiler <source_file.c> <output_file.c>
 
 # Tokenize only (lexer demo)
 ./lexer_tokens <source_file.c>
@@ -125,6 +129,7 @@ Parsing finished with 1 error(s).
 | `TOKEN_FLOAT`  | `float`  |
 | `TOKEN_CHAR`   | `char`   |
 | `TOKEN_VOID`   | `void`   |
+| `TOKEN_TENSOR` | `tensor` |
 | `TOKEN_IF`     | `if`     |
 | `TOKEN_ELSE`   | `else`   |
 | `TOKEN_WHILE`  | `while`  |

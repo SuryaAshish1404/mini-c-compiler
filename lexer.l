@@ -36,6 +36,7 @@ NEWLINE     \n
 "float"     { return TOKEN_FLOAT;  }
 "char"      { return TOKEN_CHAR;   }
 "void"      { return TOKEN_VOID;   }
+"tensor"    { return TOKEN_TENSOR; }
 "if"        { return TOKEN_IF;     }
 "else"      { return TOKEN_ELSE;   }
 "while"     { return TOKEN_WHILE;  }

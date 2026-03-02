@@ -9,7 +9,8 @@
 enum class SymbolKind {
     VARIABLE,
     FUNCTION,
-    PARAMETER
+    PARAMETER,
+    TENSOR
 };
 
 struct SymbolEntry {
@@ -18,6 +19,13 @@ struct SymbolEntry {
     SymbolKind kind;
     int line_declared;
     int scope_level;
+    
+    // Tensor-specific fields
+    bool is_tensor;
+    int num_dimensions;
+    std::vector<int> shape;
+    
+    SymbolEntry() : is_tensor(false), num_dimensions(0) {}
 };
 
 class SymbolTable {
@@ -30,6 +38,9 @@ public:
 
     bool insert(const std::string& name, const std::string& type,
                 SymbolKind kind, int line_number);
+    
+    bool insert_tensor(const std::string& name, const std::vector<int>& shape,
+                       int line_number);
 
     SymbolEntry* lookup(const std::string& name);
     SymbolEntry* lookup_current_scope(const std::string& name);

@@ -44,6 +44,12 @@
 #if YYDEBUG
 extern int yydebug;
 #endif
+/* "%code requires" blocks.  */
+#line 103 "parser.y"
+
+    #include <vector>
+
+#line 53 "parser.tab.hpp"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -58,45 +64,46 @@ extern int yydebug;
     TOKEN_FLOAT = 259,             /* TOKEN_FLOAT  */
     TOKEN_CHAR = 260,              /* TOKEN_CHAR  */
     TOKEN_VOID = 261,              /* TOKEN_VOID  */
-    TOKEN_IF = 262,                /* TOKEN_IF  */
-    TOKEN_ELSE = 263,              /* TOKEN_ELSE  */
-    TOKEN_WHILE = 264,             /* TOKEN_WHILE  */
-    TOKEN_FOR = 265,               /* TOKEN_FOR  */
-    TOKEN_RETURN = 266,            /* TOKEN_RETURN  */
-    TOKEN_INT_LITERAL = 267,       /* TOKEN_INT_LITERAL  */
-    TOKEN_FLOAT_LITERAL = 268,     /* TOKEN_FLOAT_LITERAL  */
-    TOKEN_IDENTIFIER = 269,        /* TOKEN_IDENTIFIER  */
-    TOKEN_STRING_LITERAL = 270,    /* TOKEN_STRING_LITERAL  */
-    TOKEN_PLUS = 271,              /* TOKEN_PLUS  */
-    TOKEN_MINUS = 272,             /* TOKEN_MINUS  */
-    TOKEN_STAR = 273,              /* TOKEN_STAR  */
-    TOKEN_SLASH = 274,             /* TOKEN_SLASH  */
-    TOKEN_PERCENT = 275,           /* TOKEN_PERCENT  */
-    TOKEN_ASSIGN = 276,            /* TOKEN_ASSIGN  */
-    TOKEN_EQ = 277,                /* TOKEN_EQ  */
-    TOKEN_NEQ = 278,               /* TOKEN_NEQ  */
-    TOKEN_LT = 279,                /* TOKEN_LT  */
-    TOKEN_GT = 280,                /* TOKEN_GT  */
-    TOKEN_LEQ = 281,               /* TOKEN_LEQ  */
-    TOKEN_GEQ = 282,               /* TOKEN_GEQ  */
-    TOKEN_AND = 283,               /* TOKEN_AND  */
-    TOKEN_OR = 284,                /* TOKEN_OR  */
-    TOKEN_NOT = 285,               /* TOKEN_NOT  */
-    TOKEN_INCREMENT = 286,         /* TOKEN_INCREMENT  */
-    TOKEN_DECREMENT = 287,         /* TOKEN_DECREMENT  */
-    TOKEN_PLUS_ASSIGN = 288,       /* TOKEN_PLUS_ASSIGN  */
-    TOKEN_MINUS_ASSIGN = 289,      /* TOKEN_MINUS_ASSIGN  */
-    TOKEN_STAR_ASSIGN = 290,       /* TOKEN_STAR_ASSIGN  */
-    TOKEN_SLASH_ASSIGN = 291,      /* TOKEN_SLASH_ASSIGN  */
-    TOKEN_LPAREN = 292,            /* TOKEN_LPAREN  */
-    TOKEN_RPAREN = 293,            /* TOKEN_RPAREN  */
-    TOKEN_LBRACE = 294,            /* TOKEN_LBRACE  */
-    TOKEN_RBRACE = 295,            /* TOKEN_RBRACE  */
-    TOKEN_LBRACKET = 296,          /* TOKEN_LBRACKET  */
-    TOKEN_RBRACKET = 297,          /* TOKEN_RBRACKET  */
-    TOKEN_SEMICOLON = 298,         /* TOKEN_SEMICOLON  */
-    TOKEN_COMMA = 299,             /* TOKEN_COMMA  */
-    UMINUS = 300                   /* UMINUS  */
+    TOKEN_TENSOR = 262,            /* TOKEN_TENSOR  */
+    TOKEN_IF = 263,                /* TOKEN_IF  */
+    TOKEN_ELSE = 264,              /* TOKEN_ELSE  */
+    TOKEN_WHILE = 265,             /* TOKEN_WHILE  */
+    TOKEN_FOR = 266,               /* TOKEN_FOR  */
+    TOKEN_RETURN = 267,            /* TOKEN_RETURN  */
+    TOKEN_INT_LITERAL = 268,       /* TOKEN_INT_LITERAL  */
+    TOKEN_FLOAT_LITERAL = 269,     /* TOKEN_FLOAT_LITERAL  */
+    TOKEN_IDENTIFIER = 270,        /* TOKEN_IDENTIFIER  */
+    TOKEN_STRING_LITERAL = 271,    /* TOKEN_STRING_LITERAL  */
+    TOKEN_PLUS = 272,              /* TOKEN_PLUS  */
+    TOKEN_MINUS = 273,             /* TOKEN_MINUS  */
+    TOKEN_STAR = 274,              /* TOKEN_STAR  */
+    TOKEN_SLASH = 275,             /* TOKEN_SLASH  */
+    TOKEN_PERCENT = 276,           /* TOKEN_PERCENT  */
+    TOKEN_ASSIGN = 277,            /* TOKEN_ASSIGN  */
+    TOKEN_EQ = 278,                /* TOKEN_EQ  */
+    TOKEN_NEQ = 279,               /* TOKEN_NEQ  */
+    TOKEN_LT = 280,                /* TOKEN_LT  */
+    TOKEN_GT = 281,                /* TOKEN_GT  */
+    TOKEN_LEQ = 282,               /* TOKEN_LEQ  */
+    TOKEN_GEQ = 283,               /* TOKEN_GEQ  */
+    TOKEN_AND = 284,               /* TOKEN_AND  */
+    TOKEN_OR = 285,                /* TOKEN_OR  */
+    TOKEN_NOT = 286,               /* TOKEN_NOT  */
+    TOKEN_INCREMENT = 287,         /* TOKEN_INCREMENT  */
+    TOKEN_DECREMENT = 288,         /* TOKEN_DECREMENT  */
+    TOKEN_PLUS_ASSIGN = 289,       /* TOKEN_PLUS_ASSIGN  */
+    TOKEN_MINUS_ASSIGN = 290,      /* TOKEN_MINUS_ASSIGN  */
+    TOKEN_STAR_ASSIGN = 291,       /* TOKEN_STAR_ASSIGN  */
+    TOKEN_SLASH_ASSIGN = 292,      /* TOKEN_SLASH_ASSIGN  */
+    TOKEN_LPAREN = 293,            /* TOKEN_LPAREN  */
+    TOKEN_RPAREN = 294,            /* TOKEN_RPAREN  */
+    TOKEN_LBRACE = 295,            /* TOKEN_LBRACE  */
+    TOKEN_RBRACE = 296,            /* TOKEN_RBRACE  */
+    TOKEN_LBRACKET = 297,          /* TOKEN_LBRACKET  */
+    TOKEN_RBRACKET = 298,          /* TOKEN_RBRACKET  */
+    TOKEN_SEMICOLON = 299,         /* TOKEN_SEMICOLON  */
+    TOKEN_COMMA = 300,             /* TOKEN_COMMA  */
+    UMINUS = 301                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -105,13 +112,14 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 20 "parser.y"
+#line 107 "parser.y"
 
     int    ival;
     double fval;
     char*  sval;
+    std::vector<int>* dim_list;
 
-#line 115 "parser.tab.hpp"
+#line 123 "parser.tab.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

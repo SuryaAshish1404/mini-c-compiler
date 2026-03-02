@@ -64,7 +64,70 @@ Name           Type      Kind        Line    Scope
 Parsing finished with 1 error(s).
 ```
 
-## 5. Verify Toolchain (optional)
+## 5. Run — Tensor Operations (Valid)
+
+```powershell
+./mini_compiler test_tensor_valid.c output_tensor1.c
+```
+
+**Expected output:**
+```
+Parsing 'test_tensor_valid.c'...
+
+Generated code written to 'output_tensor1.c'
+
+===== Symbol Table =====
+Name           Type      Kind        Line    Scope   Shape
+---------------------------------------------------------------------
+A              tensor    tensor      6       0       [2][2]
+B              tensor    tensor      7       0       [2][2]
+C              tensor    tensor      8       0       [2][2]
+main           int       function    13      0
+========================
+
+Parsing completed successfully. No errors found.
+```
+
+## 6. Run — Tensor Operations (Invalid Shape Mismatch)
+
+```powershell
+./mini_compiler test_tensor_invalid.c
+```
+
+**Expected output:**
+```
+Parsing 'test_tensor_invalid.c'...
+
+Semantic Error (line 11): tensor shape mismatch: A and B have incompatible shapes
+
+===== Symbol Table =====
+Name           Type      Kind        Line    Scope   Shape
+---------------------------------------------------------------------
+A              tensor    tensor      6       0       [2][3]
+B              tensor    tensor      7       0       [3][2]
+C              tensor    tensor      8       0       [2][3]
+main           int       function    13      0
+========================
+
+Parsing finished with 1 error(s).
+```
+
+## 7. View Generated Tensor Code
+
+```powershell
+cat output_tensor1.c
+```
+
+**Expected output:**
+```c
+for(int i0=0; i0<2; i0++) {
+    for(int i1=0; i1<2; i1++) {
+        C[i0][i1] = A[i0][i1] + B[i0][i1];
+    }
+}
+```
+
+## 8. Verify Toolchain (optional)
 
 ```powershell
 flex --version

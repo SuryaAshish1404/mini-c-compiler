@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <vector>
 #include <iostream>
 #include "symbol_table.h"
 
@@ -15,18 +16,105 @@ void yyerror(const char* msg);
 
 SymbolTable sym_table;
 int error_count = 0;
+FILE* output_file = nullptr;
+
+bool check_tensor_compatibility(const std::string& lhs, const std::string& rhs, const std::string& op) {
+    SymbolEntry* left = sym_table.lookup(lhs);
+    SymbolEntry* right = sym_table.lookup(rhs);
+    
+    if (!left || !right) {
+        std::cerr << "Semantic Error (line " << yylineno << "): undefined tensor in operation\n";
+        error_count++;
+        return false;
+    }
+    
+    if (!left->is_tensor || !right->is_tensor) {
+        std::cerr << "Semantic Error (line " << yylineno << "): " << op 
+                  << " requires tensor operands\n";
+        error_count++;
+        return false;
+    }
+    
+    if (left->num_dimensions != right->num_dimensions) {
+        std::cerr << "Semantic Error (line " << yylineno << "): tensor dimension mismatch for " 
+                  << op << "\n";
+        error_count++;
+        return false;
+    }
+    
+    for (int i = 0; i < left->num_dimensions; i++) {
+        if (left->shape[i] != right->shape[i]) {
+            std::cerr << "Semantic Error (line " << yylineno << "): tensor shape mismatch: "
+                      << lhs << " and " << rhs << " have incompatible shapes\n";
+            error_count++;
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+void generate_tensor_operation(const std::string& dest, const std::string& lhs, 
+                               const std::string& rhs, const std::string& op) {
+    if (!output_file) return;
+    
+    SymbolEntry* tensor = sym_table.lookup(lhs);
+    if (!tensor || !tensor->is_tensor) return;
+    
+    std::vector<std::string> loop_vars;
+    for (int i = 0; i < tensor->num_dimensions; i++) {
+        loop_vars.push_back("i" + std::to_string(i));
+    }
+    
+    // Generate nested loops
+    for (int i = 0; i < tensor->num_dimensions; i++) {
+        for (int j = 0; j < i; j++) fprintf(output_file, "    ");
+        fprintf(output_file, "for(int %s=0; %s<%d; %s++) {\n", 
+                loop_vars[i].c_str(), loop_vars[i].c_str(), 
+                tensor->shape[i], loop_vars[i].c_str());
+    }
+    
+    // Generate array access
+    for (int i = 0; i < tensor->num_dimensions; i++) {
+        fprintf(output_file, "    ");
+    }
+    fprintf(output_file, "%s", dest.c_str());
+    for (const auto& var : loop_vars) {
+        fprintf(output_file, "[%s]", var.c_str());
+    }
+    fprintf(output_file, " = %s", lhs.c_str());
+    for (const auto& var : loop_vars) {
+        fprintf(output_file, "[%s]", var.c_str());
+    }
+    fprintf(output_file, " %s %s", op.c_str(), rhs.c_str());
+    for (const auto& var : loop_vars) {
+        fprintf(output_file, "[%s]", var.c_str());
+    }
+    fprintf(output_file, ";\n");
+    
+    // Close loops
+    for (int i = tensor->num_dimensions - 1; i >= 0; i--) {
+        for (int j = 0; j < i; j++) fprintf(output_file, "    ");
+        fprintf(output_file, "}\n");
+    }
+}
 %}
+
+%code requires {
+    #include <vector>
+}
 
 %union {
     int    ival;
     double fval;
     char*  sval;
+    std::vector<int>* dim_list;
 }
 
 /* ---------- Token declarations ---------- */
 
 /* Keywords */
-%token TOKEN_INT TOKEN_FLOAT TOKEN_CHAR TOKEN_VOID
+%token TOKEN_INT TOKEN_FLOAT TOKEN_CHAR TOKEN_VOID TOKEN_TENSOR
 %token TOKEN_IF TOKEN_ELSE TOKEN_WHILE TOKEN_FOR TOKEN_RETURN
 
 /* Literals */
@@ -62,6 +150,7 @@ int error_count = 0;
 
 /* ---------- Non-terminal types ---------- */
 %type <sval> type_specifier
+%type <dim_list> dimension_list
 
 /* Start symbol */
 %start program
@@ -82,6 +171,7 @@ declaration_list
 declaration
     : variable_declaration
     | function_declaration
+    | tensor_declaration
     ;
 
 /* ---------- Type specifiers ---------- */
@@ -103,6 +193,29 @@ variable_declaration
         {
             sym_table.insert($2, $1, SymbolKind::VARIABLE, yylineno);
             free($1); free($2);
+        }
+    ;
+
+/* ---------- Tensor declarations ---------- */
+tensor_declaration
+    : TOKEN_TENSOR TOKEN_IDENTIFIER dimension_list TOKEN_SEMICOLON
+        {
+            sym_table.insert_tensor($2, *$3, yylineno);
+            free($2);
+            delete $3;
+        }
+    ;
+
+dimension_list
+    : dimension_list TOKEN_LBRACKET TOKEN_INT_LITERAL TOKEN_RBRACKET
+        {
+            $$ = $1;
+            $$->push_back($3);
+        }
+    | TOKEN_LBRACKET TOKEN_INT_LITERAL TOKEN_RBRACKET
+        {
+            $$ = new std::vector<int>();
+            $$->push_back($2);
         }
     ;
 
@@ -193,6 +306,42 @@ assignment_expression
         { free($1); }
     | TOKEN_IDENTIFIER TOKEN_SLASH_ASSIGN expression
         { free($1); }
+    | TOKEN_IDENTIFIER TOKEN_ASSIGN TOKEN_IDENTIFIER TOKEN_PLUS TOKEN_IDENTIFIER
+        {
+            if (check_tensor_compatibility($3, $5, "addition")) {
+                SymbolEntry* dest = sym_table.lookup($1);
+                if (dest && dest->is_tensor) {
+                    if (check_tensor_compatibility($1, $3, "assignment")) {
+                        generate_tensor_operation($1, $3, $5, "+");
+                    }
+                }
+            }
+            free($1); free($3); free($5);
+        }
+    | TOKEN_IDENTIFIER TOKEN_ASSIGN TOKEN_IDENTIFIER TOKEN_MINUS TOKEN_IDENTIFIER
+        {
+            if (check_tensor_compatibility($3, $5, "subtraction")) {
+                SymbolEntry* dest = sym_table.lookup($1);
+                if (dest && dest->is_tensor) {
+                    if (check_tensor_compatibility($1, $3, "assignment")) {
+                        generate_tensor_operation($1, $3, $5, "-");
+                    }
+                }
+            }
+            free($1); free($3); free($5);
+        }
+    | TOKEN_IDENTIFIER TOKEN_ASSIGN TOKEN_IDENTIFIER TOKEN_STAR TOKEN_IDENTIFIER
+        {
+            if (check_tensor_compatibility($3, $5, "multiplication")) {
+                SymbolEntry* dest = sym_table.lookup($1);
+                if (dest && dest->is_tensor) {
+                    if (check_tensor_compatibility($1, $3, "assignment")) {
+                        generate_tensor_operation($1, $3, $5, "*");
+                    }
+                }
+            }
+            free($1); free($3); free($5);
+        }
     | logical_or_expression
     ;
 
@@ -276,7 +425,7 @@ void yyerror(const char* msg) {
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <source_file.c>" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <source_file.c> [output_file.c]" << std::endl;
         return 1;
     }
 
@@ -286,6 +435,14 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    // Open output file if specified
+    if (argc >= 3) {
+        output_file = fopen(argv[2], "w");
+        if (!output_file) {
+            std::cerr << "Warning: cannot open output file '" << argv[2] << "'" << std::endl;
+        }
+    }
+
     yyin = file;
 
     std::cout << "Parsing '" << argv[1] << "'...\n" << std::endl;
@@ -293,6 +450,12 @@ int main(int argc, char* argv[]) {
     int result = yyparse();
 
     fclose(file);
+    if (output_file) {
+        fclose(output_file);
+        if (result == 0 && error_count == 0) {
+            std::cout << "Generated code written to '" << argv[2] << "'\n";
+        }
+    }
 
     sym_table.print();
 

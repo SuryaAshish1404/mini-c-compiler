@@ -19,6 +19,7 @@ std::string token_to_string(int token) {
         case TOKEN_FLOAT: return "TOKEN_FLOAT";
         case TOKEN_CHAR: return "TOKEN_CHAR";
         case TOKEN_VOID: return "TOKEN_VOID";
+        case TOKEN_TENSOR: return "TOKEN_TENSOR";
         case TOKEN_IF: return "TOKEN_IF";
         case TOKEN_ELSE: return "TOKEN_ELSE";
         case TOKEN_WHILE: return "TOKEN_WHILE";
