@@ -5,7 +5,7 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
-#include "parser.tab.hpp"
+#include "../parser.tab.hpp"
 
 extern int yylex();
 extern int yylineno;

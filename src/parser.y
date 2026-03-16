@@ -29,9 +29,6 @@ bool check_tensor_compatibility(const std::string& lhs, const std::string& rhs, 
     }
     
     if (!left->is_tensor || !right->is_tensor) {
-        std::cerr << "Semantic Error (line " << yylineno << "): " << op 
-                  << " requires tensor operands\n";
-        error_count++;
         return false;
     }
     
@@ -306,42 +303,6 @@ assignment_expression
         { free($1); }
     | TOKEN_IDENTIFIER TOKEN_SLASH_ASSIGN expression
         { free($1); }
-    | TOKEN_IDENTIFIER TOKEN_ASSIGN TOKEN_IDENTIFIER TOKEN_PLUS TOKEN_IDENTIFIER
-        {
-            if (check_tensor_compatibility($3, $5, "addition")) {
-                SymbolEntry* dest = sym_table.lookup($1);
-                if (dest && dest->is_tensor) {
-                    if (check_tensor_compatibility($1, $3, "assignment")) {
-                        generate_tensor_operation($1, $3, $5, "+");
-                    }
-                }
-            }
-            free($1); free($3); free($5);
-        }
-    | TOKEN_IDENTIFIER TOKEN_ASSIGN TOKEN_IDENTIFIER TOKEN_MINUS TOKEN_IDENTIFIER
-        {
-            if (check_tensor_compatibility($3, $5, "subtraction")) {
-                SymbolEntry* dest = sym_table.lookup($1);
-                if (dest && dest->is_tensor) {
-                    if (check_tensor_compatibility($1, $3, "assignment")) {
-                        generate_tensor_operation($1, $3, $5, "-");
-                    }
-                }
-            }
-            free($1); free($3); free($5);
-        }
-    | TOKEN_IDENTIFIER TOKEN_ASSIGN TOKEN_IDENTIFIER TOKEN_STAR TOKEN_IDENTIFIER
-        {
-            if (check_tensor_compatibility($3, $5, "multiplication")) {
-                SymbolEntry* dest = sym_table.lookup($1);
-                if (dest && dest->is_tensor) {
-                    if (check_tensor_compatibility($1, $3, "assignment")) {
-                        generate_tensor_operation($1, $3, $5, "*");
-                    }
-                }
-            }
-            free($1); free($3); free($5);
-        }
     | logical_or_expression
     ;
 

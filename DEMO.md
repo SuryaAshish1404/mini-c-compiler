@@ -23,7 +23,7 @@ make
 ## 3. Run — Valid Syntax
 
 ```powershell
-./mini_compiler test.c
+./mini_compiler test/test.c
 ```
 
 **Expected output:**
@@ -47,7 +47,7 @@ Parsing completed successfully. No errors found.
 ## 4. Run — Invalid Syntax (Error Reporting)
 
 ```powershell
-./mini_compiler test_invalid.c
+./mini_compiler test/test_invalid.c
 ```
 
 **Expected output:**
@@ -67,7 +67,7 @@ Parsing finished with 1 error(s).
 ## 5. Run — Tensor Operations (Valid)
 
 ```powershell
-./mini_compiler test_tensor_valid.c output_tensor1.c
+./mini_compiler test/test_tensor_valid.c output_tensor1.c
 ```
 
 **Expected output:**
@@ -91,7 +91,7 @@ Parsing completed successfully. No errors found.
 ## 6. Run — Tensor Operations (Invalid Shape Mismatch)
 
 ```powershell
-./mini_compiler test_tensor_invalid.c
+./mini_compiler test/test_tensor_invalid.c
 ```
 
 **Expected output:**

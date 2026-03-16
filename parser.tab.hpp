@@ -45,7 +45,7 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 103 "parser.y"
+#line 100 "src/parser.y"
 
     #include <vector>
 
@@ -112,7 +112,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 107 "parser.y"
+#line 104 "src/parser.y"
 
     int    ival;
     double fval;
