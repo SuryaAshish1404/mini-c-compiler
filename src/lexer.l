@@ -42,6 +42,10 @@ NEWLINE     \n
 "while"     { return TOKEN_WHILE;  }
 "for"       { return TOKEN_FOR;    }
 "return"    { return TOKEN_RETURN; }
+"switch"    { return TOKEN_SWITCH; }
+"case"      { return TOKEN_CASE;   }
+"break"     { return TOKEN_BREAK;  }
+"default"   { return TOKEN_DEFAULT; }
 
  /* ---------- Operators (multi-char before single-char) ---------- */
 "++"        { return TOKEN_INCREMENT;    }
@@ -75,6 +79,7 @@ NEWLINE     \n
 "]"         { return TOKEN_RBRACKET;  }
 ";"         { return TOKEN_SEMICOLON; }
 ","         { return TOKEN_COMMA;     }
+":"         { return TOKEN_COLON;     }
 
  /* ---------- Literals ---------- */
 {FLOAT_LIT} {

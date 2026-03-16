@@ -48,120 +48,83 @@ void generate_decl_ir(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
 
 static char* gen_expr(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
     if (!node) return NULL;
-    
     char *result = (char*)malloc(64);
     
     switch (node->type) {
-        case AST_NUMBER: {
+        case AST_NUMBER:
             sprintf(result, "%d", node->int_value);
             return result;
-        }
-        
-        case AST_FLOAT_NUMBER: {
+        case AST_FLOAT_NUMBER:
             sprintf(result, "%f", node->float_value);
             return result;
-        }
-        
-        case AST_IDENTIFIER: {
+        case AST_IDENTIFIER:
             strcpy(result, node->name);
             return result;
-        }
         
         case AST_BINARY_OP: {
             char *left = gen_expr(ir_list, node->left, sym_table);
             char *right = gen_expr(ir_list, node->right, sym_table);
-            
             get_temp_var(result, 64);
-            
-            IROpcode opcode;
-            switch (node->op) {
-                case OP_ADD: opcode = IR_ADD; break;
-                case OP_SUB: opcode = IR_SUB; break;
-                case OP_MUL: opcode = IR_MUL; break;
-                case OP_DIV: opcode = IR_DIV; break;
-                case OP_MOD: opcode = IR_MOD; break;
-                case OP_EQ:  opcode = IR_EQ; break;
-                case OP_NEQ: opcode = IR_NEQ; break;
-                case OP_LT:  opcode = IR_LT; break;
-                case OP_GT:  opcode = IR_GT; break;
-                case OP_LEQ: opcode = IR_LEQ; break;
-                case OP_GEQ: opcode = IR_GEQ; break;
-                case OP_AND: opcode = IR_AND; break;
-                case OP_OR:  opcode = IR_OR; break;
-                default: opcode = IR_ADD; break;
-            }
-            
+            IROpcode opcode = IR_ADD;
+            if (node->op == OP_SUB) opcode = IR_SUB;
+            else if (node->op == OP_MUL) opcode = IR_MUL;
+            else if (node->op == OP_DIV) opcode = IR_DIV;
+            else if (node->op == OP_MOD) opcode = IR_MOD;
+            else if (node->op == OP_EQ) opcode = IR_EQ;
+            else if (node->op == OP_NEQ) opcode = IR_NEQ;
+            else if (node->op == OP_LT) opcode = IR_LT;
+            else if (node->op == OP_GT) opcode = IR_GT;
+            else if (node->op == OP_LEQ) opcode = IR_LEQ;
+            else if (node->op == OP_GEQ) opcode = IR_GEQ;
+            else if (node->op == OP_AND) opcode = IR_AND;
+            else if (node->op == OP_OR) opcode = IR_OR;
             append_ir(ir_list, create_ir_binary(opcode, result, left, right));
-            
-            free(left);
-            free(right);
+            free(left); free(right);
             return result;
         }
         
         case AST_UNARY_OP: {
             char *operand = gen_expr(ir_list, node->left, sym_table);
             get_temp_var(result, 64);
-            
-            IROpcode opcode = (node->op == OP_NOT) ? IR_NOT : IR_NEG;
-            append_ir(ir_list, create_ir_unary(opcode, result, operand));
-            
+            append_ir(ir_list, create_ir_unary((node->op == OP_NOT) ? IR_NOT : IR_NEG, result, operand));
             free(operand);
             return result;
         }
         
         case AST_ASSIGNMENT: {
             char *rhs = gen_expr(ir_list, node->right, sym_table);
-            
             if (node->left && node->left->type == AST_IDENTIFIER) {
                 append_ir(ir_list, create_ir_assign(node->left->name, rhs));
                 strcpy(result, node->left->name);
             }
-            
             free(rhs);
             return result;
         }
         
         case AST_TENSOR_ADD:
         case AST_TENSOR_SUB:
-        case AST_TENSOR_MUL: {
+        case AST_TENSOR_MUL:
             free(result);
             return NULL;
-        }
         
         case AST_TENSOR_ACCESS: {
-            if (!node->left || !node->right) {
-                free(result);
-                return NULL;
-            }
-            
+            if (!node->left || !node->right) { free(result); return NULL; }
             char *array_name = gen_expr(ir_list, node->left, sym_table);
-            if (!array_name) {
-                free(result);
-                return NULL;
-            }
-            
+            if (!array_name) { free(result); return NULL; }
             if (node->right->type == AST_BINARY_OP && node->right->op == OP_ADD) {
                 char *idx1 = gen_expr(ir_list, node->right->left, sym_table);
                 char *idx2 = gen_expr(ir_list, node->right->right, sym_table);
-                
                 char index_str[128];
                 snprintf(index_str, sizeof(index_str), "%s][%s", idx1, idx2);
-                
                 get_temp_var(result, 64);
                 append_ir(ir_list, create_ir_load(result, array_name, index_str));
-                
-                free(idx1);
-                free(idx2);
-                free(array_name);
+                free(idx1); free(idx2); free(array_name);
                 return result;
             } else {
                 char *index = gen_expr(ir_list, node->right, sym_table);
-                
                 get_temp_var(result, 64);
                 append_ir(ir_list, create_ir_load(result, array_name, index));
-                
-                free(index);
-                free(array_name);
+                free(index); free(array_name);
                 return result;
             }
         }
@@ -179,11 +142,9 @@ static char* gen_expr(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
                     }
                 }
             }
-            
             get_temp_var(result, 64);
-            int num_args = (node->left && node->left->type == AST_ARG_LIST) ? 
-                          node->left->num_children : 0;
-            append_ir(ir_list, create_ir_call(result, node->name, num_args));
+            append_ir(ir_list, create_ir_call(result, node->name, 
+                (node->left && node->left->type == AST_ARG_LIST) ? node->left->num_children : 0));
             return result;
         }
         
@@ -195,17 +156,12 @@ static char* gen_expr(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
 
 static void gen_stmt(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
     if (!node) return;
-    
     switch (node->type) {
         case AST_COMPOUND_STMT:
         case AST_STATEMENT_LIST:
-            if (node->children) {
-                for (int i = 0; i < node->num_children; i++) {
-                    gen_stmt(ir_list, node->children[i], sym_table);
-                }
-            }
+            for (int i = 0; node->children && i < node->num_children; i++)
+                gen_stmt(ir_list, node->children[i], sym_table);
             break;
-            
         case AST_EXPR_STMT:
             if (node->left) {
                 char *result = gen_expr(ir_list, node->left, sym_table);
@@ -279,38 +235,30 @@ static void gen_stmt(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
         
         case AST_IF_STMT: {
             char *cond = gen_expr(ir_list, node->condition, sym_table);
-            
             char else_label[32], end_label[32];
             get_label(else_label, sizeof(else_label));
             get_label(end_label, sizeof(end_label));
             IR *if_ir = create_ir(IR_IF_FALSE);
             strcpy(if_ir->op, "IF_FALSE");
             strncpy(if_ir->arg1, cond, sizeof(if_ir->arg1) - 1);
-            strncpy(if_ir->result, node->else_branch ? else_label : end_label, 
-                   sizeof(if_ir->result) - 1);
+            strncpy(if_ir->result, node->else_branch ? else_label : end_label, sizeof(if_ir->result) - 1);
             append_ir(ir_list, if_ir);
-            
             gen_stmt(ir_list, node->then_branch, sym_table);
-            
             if (node->else_branch) {
                 IR *goto_ir = create_ir(IR_GOTO);
                 strcpy(goto_ir->op, "GOTO");
                 strncpy(goto_ir->result, end_label, sizeof(goto_ir->result) - 1);
                 append_ir(ir_list, goto_ir);
-                
                 IR *else_label_ir = create_ir(IR_LABEL);
                 strcpy(else_label_ir->op, "LABEL");
                 strncpy(else_label_ir->result, else_label, sizeof(else_label_ir->result) - 1);
                 append_ir(ir_list, else_label_ir);
-                
                 gen_stmt(ir_list, node->else_branch, sym_table);
             }
-            
             IR *end_label_ir = create_ir(IR_LABEL);
             strcpy(end_label_ir->op, "LABEL");
             strncpy(end_label_ir->result, end_label, sizeof(end_label_ir->result) - 1);
             append_ir(ir_list, end_label_ir);
-            
             if (cond) free(cond);
             break;
         }
@@ -319,57 +267,40 @@ static void gen_stmt(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
             char start_label[32], end_label[32];
             get_label(start_label, sizeof(start_label));
             get_label(end_label, sizeof(end_label));
-            
-            
             IR *start_ir = create_ir(IR_LABEL);
             strcpy(start_ir->op, "LABEL");
             strncpy(start_ir->result, start_label, sizeof(start_ir->result) - 1);
             append_ir(ir_list, start_ir);
-            
-            
             char *cond = gen_expr(ir_list, node->condition, sym_table);
-            
-            
             IR *if_ir = create_ir(IR_IF_FALSE);
             strcpy(if_ir->op, "IF_FALSE");
             strncpy(if_ir->arg1, cond, sizeof(if_ir->arg1) - 1);
             strncpy(if_ir->result, end_label, sizeof(if_ir->result) - 1);
             append_ir(ir_list, if_ir);
-            
-            
             gen_stmt(ir_list, node->body, sym_table);
-            
-            
             IR *goto_ir = create_ir(IR_GOTO);
             strcpy(goto_ir->op, "GOTO");
             strncpy(goto_ir->result, start_label, sizeof(goto_ir->result) - 1);
             append_ir(ir_list, goto_ir);
-            
-            
             IR *end_ir = create_ir(IR_LABEL);
             strcpy(end_ir->op, "LABEL");
             strncpy(end_ir->result, end_label, sizeof(end_ir->result) - 1);
             append_ir(ir_list, end_ir);
-            
             if (cond) free(cond);
             break;
         }
         
-        case AST_RETURN_STMT: {
+        case AST_RETURN_STMT:
             if (node->left) {
                 char *ret_val = gen_expr(ir_list, node->left, sym_table);
                 append_ir(ir_list, create_ir_return(ret_val));
                 if (ret_val) free(ret_val);
-            } else {
-                append_ir(ir_list, create_ir_return(NULL));
-            }
+            } else append_ir(ir_list, create_ir_return(NULL));
             break;
-        }
         
         case AST_VARIABLE_DECL:
             generate_decl_ir(ir_list, node, sym_table);
             break;
-            
         default:
             break;
     }
@@ -377,32 +308,20 @@ static void gen_stmt(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
 
 IRList* generate_ir_from_ast(ASTNode *ast, SymbolTable *sym_table) {
     if (!ast) return NULL;
-    
     IRList *ir_list = create_ir_list();
     reset_temp_counter();
     if (ast->type == AST_PROGRAM || ast->type == AST_DECLARATION_LIST) {
-        if (ast->children) {
-            for (int i = 0; i < ast->num_children; i++) {
-                ASTNode *decl = ast->children[i];
-                
-                if (decl->type == AST_FUNCTION_DECL) {
-                    
-                    generate_decl_ir(ir_list, decl, sym_table);
-                } else if (decl->type == AST_VARIABLE_DECL) {
-                    generate_decl_ir(ir_list, decl, sym_table);
-                }
-                
-            }
+        for (int i = 0; ast->children && i < ast->num_children; i++) {
+            if (ast->children[i]->type == AST_FUNCTION_DECL || 
+                ast->children[i]->type == AST_VARIABLE_DECL)
+                generate_decl_ir(ir_list, ast->children[i], sym_table);
         }
     } else {
-        
-        if (ast->type == AST_FUNCTION_DECL || ast->type == AST_VARIABLE_DECL) {
+        if (ast->type == AST_FUNCTION_DECL || ast->type == AST_VARIABLE_DECL)
             generate_decl_ir(ir_list, ast, sym_table);
-        } else {
+        else
             gen_stmt(ir_list, ast, sym_table);
-        }
     }
-    
     return ir_list;
 }
 

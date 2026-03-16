@@ -63,7 +63,7 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
         loop_vars.push_back("i" + std::to_string(i));
     }
     
-    // Generate nested loops
+    // generate nested loops
     for (int i = 0; i < tensor->num_dimensions; i++) {
         for (int j = 0; j < i; j++) fprintf(output_file, "    ");
         fprintf(output_file, "for(int %s=0; %s<%d; %s++) {\n", 
@@ -71,10 +71,8 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
                 tensor->shape[i], loop_vars[i].c_str());
     }
     
-    // Generate array access
-    for (int i = 0; i < tensor->num_dimensions; i++) {
-        fprintf(output_file, "    ");
-    }
+    // generate array access
+    for (int i = 0; i < tensor->num_dimensions; i++) fprintf(output_file, "    ");
     fprintf(output_file, "%s", dest.c_str());
     for (const auto& var : loop_vars) {
         fprintf(output_file, "[%s]", var.c_str());
@@ -89,7 +87,7 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
     }
     fprintf(output_file, ";\n");
     
-    // Close loops
+    // close loops
     for (int i = tensor->num_dimensions - 1; i >= 0; i--) {
         for (int j = 0; j < i; j++) fprintf(output_file, "    ");
         fprintf(output_file, "}\n");
@@ -113,6 +111,7 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
 /* Keywords */
 %token TOKEN_INT TOKEN_FLOAT TOKEN_CHAR TOKEN_VOID TOKEN_TENSOR
 %token TOKEN_IF TOKEN_ELSE TOKEN_WHILE TOKEN_FOR TOKEN_RETURN
+%token TOKEN_SWITCH TOKEN_CASE TOKEN_BREAK TOKEN_DEFAULT
 
 /* Literals */
 %token <ival> TOKEN_INT_LITERAL
@@ -132,7 +131,7 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
 %token TOKEN_LPAREN TOKEN_RPAREN
 %token TOKEN_LBRACE TOKEN_RBRACE
 %token TOKEN_LBRACKET TOKEN_RBRACKET
-%token TOKEN_SEMICOLON TOKEN_COMMA
+%token TOKEN_SEMICOLON TOKEN_COMMA TOKEN_COLON
 
 /* ---------- Operator precedence & associativity (low to high) ---------- */
 %right TOKEN_ASSIGN TOKEN_PLUS_ASSIGN TOKEN_MINUS_ASSIGN TOKEN_STAR_ASSIGN TOKEN_SLASH_ASSIGN
@@ -263,6 +262,8 @@ statement
     | selection_statement
     | iteration_statement
     | return_statement
+    | switch_statement
+    | break_statement
     ;
 
 expression_statement
@@ -285,6 +286,24 @@ iteration_statement
 return_statement
     : TOKEN_RETURN expression TOKEN_SEMICOLON
     | TOKEN_RETURN TOKEN_SEMICOLON
+    ;
+
+switch_statement
+    : TOKEN_SWITCH TOKEN_LPAREN expression TOKEN_RPAREN TOKEN_LBRACE case_list TOKEN_RBRACE
+    ;
+
+case_list
+    : case_list case_clause
+    | case_clause
+    ;
+
+case_clause
+    : TOKEN_CASE TOKEN_INT_LITERAL TOKEN_COLON statement_list
+    | TOKEN_DEFAULT TOKEN_COLON statement_list
+    ;
+
+break_statement
+    : TOKEN_BREAK TOKEN_SEMICOLON
     ;
 
 /* ---------- Expressions ---------- */
