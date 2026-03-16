@@ -20,7 +20,7 @@ struct SymbolEntry {
     int line_declared;
     int scope_level;
     
-    // Tensor-specific fields
+    
     bool is_tensor;
     int num_dimensions;
     std::vector<int> shape;
@@ -56,4 +56,4 @@ private:
     int scope_level_;
 };
 
-#endif // SYMBOL_TABLE_H
+#endif 

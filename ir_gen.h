@@ -10,11 +10,11 @@
 extern "C" {
 #endif
 
-// Main IR generation function (C++ only due to SymbolTable dependency)
+
 #ifdef __cplusplus
 IRList* generate_ir_from_ast(ASTNode *ast, SymbolTable *sym_table);
 
-// Generate IR for different AST node types
+
 char* generate_expr_ir(IRList *ir_list, ASTNode *node, SymbolTable *sym_table);
 void generate_stmt_ir(IRList *ir_list, ASTNode *node, SymbolTable *sym_table);
 void generate_decl_ir(IRList *ir_list, ASTNode *node, SymbolTable *sym_table);
@@ -24,4 +24,4 @@ void generate_decl_ir(IRList *ir_list, ASTNode *node, SymbolTable *sym_table);
 }
 #endif
 
-#endif // IR_GEN_H
+#endif 

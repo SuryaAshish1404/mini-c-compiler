@@ -128,6 +128,44 @@ static char* gen_expr(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
             return NULL;
         }
         
+        case AST_TENSOR_ACCESS: {
+            if (!node->left || !node->right) {
+                free(result);
+                return NULL;
+            }
+            
+            char *array_name = gen_expr(ir_list, node->left, sym_table);
+            if (!array_name) {
+                free(result);
+                return NULL;
+            }
+            
+            if (node->right->type == AST_BINARY_OP && node->right->op == OP_ADD) {
+                char *idx1 = gen_expr(ir_list, node->right->left, sym_table);
+                char *idx2 = gen_expr(ir_list, node->right->right, sym_table);
+                
+                char index_str[128];
+                snprintf(index_str, sizeof(index_str), "%s][%s", idx1, idx2);
+                
+                get_temp_var(result, 64);
+                append_ir(ir_list, create_ir_load(result, array_name, index_str));
+                
+                free(idx1);
+                free(idx2);
+                free(array_name);
+                return result;
+            } else {
+                char *index = gen_expr(ir_list, node->right, sym_table);
+                
+                get_temp_var(result, 64);
+                append_ir(ir_list, create_ir_load(result, array_name, index));
+                
+                free(index);
+                free(array_name);
+                return result;
+            }
+        }
+        
         case AST_FUNCTION_CALL: {
             if (node->left && node->left->type == AST_ARG_LIST) {
                 for (int i = 0; i < node->left->num_children; i++) {
@@ -201,6 +239,34 @@ static void gen_stmt(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
                         generate_tensor_loops(ir_list, &tensor_info, dest, lhs, rhs, op);
                     }
                 }
+            } else if (node->left && node->left->type == AST_TENSOR_ACCESS) {
+                char *rhs_val = gen_expr(ir_list, node->right, sym_table);
+                
+                ASTNode *access = node->left;
+                if (access->left && access->right) {
+                    char *array_name = gen_expr(ir_list, access->left, sym_table);
+                    
+                    if (access->right->type == AST_BINARY_OP && access->right->op == OP_ADD) {
+                        char *idx1 = gen_expr(ir_list, access->right->left, sym_table);
+                        char *idx2 = gen_expr(ir_list, access->right->right, sym_table);
+                        
+                        char index_str[128];
+                        snprintf(index_str, sizeof(index_str), "%s][%s", idx1, idx2);
+                        
+                        append_ir(ir_list, create_ir_store(array_name, index_str, rhs_val));
+                        
+                        free(idx1);
+                        free(idx2);
+                    } else {
+                        char *index = gen_expr(ir_list, access->right, sym_table);
+                        append_ir(ir_list, create_ir_store(array_name, index, rhs_val));
+                        free(index);
+                    }
+                    
+                    free(array_name);
+                }
+                
+                if (rhs_val) free(rhs_val);
             } else {
                 char *rhs = gen_expr(ir_list, node->right, sym_table);
                 if (rhs && node->left && node->left->type == AST_IDENTIFIER) {
@@ -254,32 +320,32 @@ static void gen_stmt(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
             get_label(start_label, sizeof(start_label));
             get_label(end_label, sizeof(end_label));
             
-            // start_label:
+            
             IR *start_ir = create_ir(IR_LABEL);
             strcpy(start_ir->op, "LABEL");
             strncpy(start_ir->result, start_label, sizeof(start_ir->result) - 1);
             append_ir(ir_list, start_ir);
             
-            // Condition
+            
             char *cond = gen_expr(ir_list, node->condition, sym_table);
             
-            // IF_FALSE condition GOTO end_label
+            
             IR *if_ir = create_ir(IR_IF_FALSE);
             strcpy(if_ir->op, "IF_FALSE");
             strncpy(if_ir->arg1, cond, sizeof(if_ir->arg1) - 1);
             strncpy(if_ir->result, end_label, sizeof(if_ir->result) - 1);
             append_ir(ir_list, if_ir);
             
-            // Body
+            
             gen_stmt(ir_list, node->body, sym_table);
             
-            // GOTO start_label
+            
             IR *goto_ir = create_ir(IR_GOTO);
             strcpy(goto_ir->op, "GOTO");
             strncpy(goto_ir->result, start_label, sizeof(goto_ir->result) - 1);
             append_ir(ir_list, goto_ir);
             
-            // end_label:
+            
             IR *end_ir = create_ir(IR_LABEL);
             strcpy(end_ir->op, "LABEL");
             strncpy(end_ir->result, end_label, sizeof(end_ir->result) - 1);
@@ -320,16 +386,16 @@ IRList* generate_ir_from_ast(ASTNode *ast, SymbolTable *sym_table) {
                 ASTNode *decl = ast->children[i];
                 
                 if (decl->type == AST_FUNCTION_DECL) {
-                    // Generate IR for function
+                    
                     generate_decl_ir(ir_list, decl, sym_table);
                 } else if (decl->type == AST_VARIABLE_DECL) {
                     generate_decl_ir(ir_list, decl, sym_table);
                 }
-                // Tensor declarations don't need IR
+                
             }
         }
     } else {
-        // Single node
+        
         if (ast->type == AST_FUNCTION_DECL || ast->type == AST_VARIABLE_DECL) {
             generate_decl_ir(ir_list, ast, sym_table);
         } else {
@@ -340,4 +406,4 @@ IRList* generate_ir_from_ast(ASTNode *ast, SymbolTable *sym_table) {
     return ir_list;
 }
 
-} // extern "C"
+} 

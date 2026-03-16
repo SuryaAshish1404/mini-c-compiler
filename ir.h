@@ -41,12 +41,12 @@ typedef enum {
 
 typedef struct IR {
     IROpcode opcode;
-    char op[16];           // Operation string
-    char arg1[64];         // First argument
-    char arg2[64];         // Second argument
-    char result[64];       // Result/destination
-    int label_num;         // For labels and jumps
-    struct IR *next;       // Linked list
+    char op[16];           
+    char arg1[64];         
+    char arg2[64];         
+    char result[64];       
+    int label_num;         
+    struct IR *next;       
 } IR;
 
 typedef struct IRList {
@@ -55,12 +55,12 @@ typedef struct IRList {
     int count;
 } IRList;
 
-// IR list management
+
 IRList* create_ir_list();
 void append_ir(IRList *list, IR *instruction);
 void free_ir_list(IRList *list);
 
-// IR instruction creation
+
 IR* create_ir(IROpcode opcode);
 IR* create_ir_assign(const char *result, const char *arg1);
 IR* create_ir_binary(IROpcode opcode, const char *result, const char *arg1, const char *arg2);
@@ -75,15 +75,15 @@ IR* create_ir_for_end();
 IR* create_ir_call(const char *result, const char *func_name, int num_args);
 IR* create_ir_return(const char *value);
 
-// IR printing
+
 void print_ir(IR *instruction);
 void print_ir_list(IRList *list);
 
-// Helper to get opcode string
+
 const char* ir_opcode_to_string(IROpcode opcode);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // IR_H
+#endif 

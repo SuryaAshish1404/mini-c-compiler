@@ -293,7 +293,7 @@ void print_ir(IR *instruction) {
     }
 }
 
-// Print entire IR list
+
 void print_ir_list(IRList *list) {
     if (!list) return;
     

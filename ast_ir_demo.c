@@ -15,7 +15,7 @@ ASTNode* build_tensor_example_ast() {
     add_child(program, create_tensor_decl_node("C", shape, 2));
     ASTNode *main_body = create_list_node(AST_STATEMENT_LIST);
     
-    // C = A + B
+    
     ASTNode *tensor_add = create_tensor_op_node(AST_TENSOR_ADD,
                                                  create_identifier_node("A"),
                                                  create_identifier_node("B"));
@@ -64,13 +64,13 @@ ASTNode* build_tensor_multi_ast() {
     
     ASTNode *main_body = create_list_node(AST_STATEMENT_LIST);
     
-    // C = A + B
+    
     ASTNode *tensor_add = create_tensor_op_node(AST_TENSOR_ADD,
                                                  create_identifier_node("A"),
                                                  create_identifier_node("B"));
     add_child(main_body, create_assignment_node(create_identifier_node("C"), tensor_add));
     
-    // D = A - B
+    
     ASTNode *tensor_sub = create_tensor_op_node(AST_TENSOR_SUB,
                                                  create_identifier_node("A"),
                                                  create_identifier_node("B"));
@@ -85,7 +85,7 @@ ASTNode* build_tensor_multi_ast() {
 }
 
 void setup_symbol_table_for_demo(int *shape, int dims) {
-    // Manually insert tensor symbols for demo
+    
     std::vector<int> shape_vec(shape, shape + dims);
     sym_table.insert_tensor("A", shape_vec, 1);
     sym_table.insert_tensor("B", shape_vec, 1);
@@ -115,7 +115,7 @@ void demo_example_2() {
     printf("Example 2: Z = X * Y (3x3 tensors)\n");
     printf("========================================\n");
     
-    // Reset symbol table
+    
     while (sym_table.current_scope() > 0) {
         sym_table.exit_scope();
     }
@@ -141,7 +141,7 @@ void demo_example_3() {
     printf("Example 3: Multiple operations (2x3 tensors)\n");
     printf("========================================\n");
     
-    // Reset symbol table
+    
     while (sym_table.current_scope() > 0) {
         sym_table.exit_scope();
     }

@@ -61,31 +61,31 @@ typedef enum {
 typedef struct ASTNode {
     ASTNodeType type;
     
-    // For binary/unary operations
+    
     struct ASTNode *left;
     struct ASTNode *right;
     OperatorType op;
     
-    // For multi-child nodes (lists, function params, etc.)
+    
     struct ASTNode **children;
     int num_children;
     int children_capacity;
     
-    // For identifiers and literals
+    
     char name[64];
     int int_value;
     double float_value;
     char string_value[256];
     
-    // For type information
+    
     char data_type[32];
     
-    // For tensor-specific information
+    
     int is_tensor;
     int dims;
     int shape[10];
     
-    // For control flow
+    
     struct ASTNode *condition;
     struct ASTNode *then_branch;
     struct ASTNode *else_branch;
@@ -93,11 +93,11 @@ typedef struct ASTNode {
     struct ASTNode *update;
     struct ASTNode *body;
     
-    // Line number for error reporting
+    
     int line_number;
 } ASTNode;
 
-// AST creation functions
+
 ASTNode* create_node(ASTNodeType type);
 ASTNode* create_binary_node(ASTNodeType type, OperatorType op, ASTNode *left, ASTNode *right);
 ASTNode* create_unary_node(ASTNodeType type, OperatorType op, ASTNode *operand);
@@ -117,19 +117,19 @@ ASTNode* create_variable_decl_node(const char *type, const char *name, ASTNode *
 ASTNode* create_function_decl_node(const char *return_type, const char *name, 
                                     ASTNode *params, ASTNode *body);
 
-// List management
+
 void add_child(ASTNode *parent, ASTNode *child);
 ASTNode* create_list_node(ASTNodeType type);
 
-// AST printing
+
 void print_ast(ASTNode *node, int indent);
 void print_ast_tree(ASTNode *node);
 
-// AST cleanup
+
 void free_ast(ASTNode *node);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // AST_H
+#endif 

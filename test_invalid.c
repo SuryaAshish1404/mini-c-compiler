@@ -1,11 +1,9 @@
-/* ============================================================
- * test_invalid.c — Invalid syntax examples for error reporting
- * ============================================================ */
 
-// Missing semicolon on variable declaration
+
+
 int bad_var
 
-// Missing closing parenthesis in if-statement
+
 int main() {
     int x = 10;
 
@@ -13,7 +11,7 @@ int main() {
         x = 5;
     }
 
-    // Unterminated string literal
+    
     char* msg = "hello;
 
     // Invalid operator usage

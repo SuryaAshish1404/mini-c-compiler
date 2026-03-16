@@ -1,6 +1,4 @@
-/* ============================================================
- * test2.c — Additional valid program exercising loops/functions
- * ============================================================ */
+
 
 int accumulator = 0;
 

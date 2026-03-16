@@ -2,7 +2,7 @@
 #include <iomanip>
 
 SymbolTable::SymbolTable() : scope_level_(-1) {
-    enter_scope(); // global scope
+    enter_scope(); 
 }
 
 void SymbolTable::enter_scope() {

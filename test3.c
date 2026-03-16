@@ -1,6 +1,4 @@
-/* ============================================================
- * test3.c — Valid program highlighting nested scopes & returns
- * ============================================================ */
+
 
 int globalFlag = 1;
 
@@ -17,7 +15,7 @@ int choose(int lhs, int rhs, int useFirst) {
 }
 
 void bump_counter(int* valuePtr) {
-    // pointers unsupported in grammar, so simulate with global
+    
 }
 
 int compute_series(int limit) {
