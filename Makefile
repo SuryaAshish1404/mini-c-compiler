@@ -22,7 +22,7 @@ BISON_HDR = parser.tab.hpp
 FLEX_SRC  = lex.yy.cpp
 
 # Project sources
-SRCS      = $(SRC_DIR)/symbol_table.cpp $(SRC_DIR)/ast.c $(SRC_DIR)/ir.c $(SRC_DIR)/temp_var.c $(SRC_DIR)/tensor_ir.c $(SRC_DIR)/ir_gen.cpp
+SRCS      = $(SRC_DIR)/symbol_table.cpp $(SRC_DIR)/ast.c $(SRC_DIR)/ir.c $(SRC_DIR)/temp_var.c $(SRC_DIR)/tensor_ir.c $(SRC_DIR)/ir_gen.cpp $(SRC_DIR)/semantic.cpp $(SRC_DIR)/codegen.c $(SRC_DIR)/optimizer.c
 LEXER_BIN = lexer_tokens
 LEXER_DRV = $(SRC_DIR)/lexer_driver.cpp
 DEMO_BIN  = ast_ir_demo
@@ -58,15 +58,24 @@ tensor_ir.o: $(SRC_DIR)/tensor_ir.c $(SRC_DIR)/tensor_ir.h
 ir_gen.o: $(SRC_DIR)/ir_gen.cpp $(SRC_DIR)/ir_gen.h
 	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/ir_gen.cpp
 
+semantic.o: $(SRC_DIR)/semantic.cpp $(SRC_DIR)/semantic.h
+	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/semantic.cpp
+
+codegen.o: $(SRC_DIR)/codegen.c $(SRC_DIR)/codegen.h
+	$(CC) $(CFLAGS) -c $(SRC_DIR)/codegen.c
+
+optimizer.o: $(SRC_DIR)/optimizer.c $(SRC_DIR)/optimizer.h
+	$(CC) $(CFLAGS) -c $(SRC_DIR)/optimizer.c
+
 # Link everything
-$(TARGET): $(FLEX_SRC) $(BISON_SRC) $(SRC_DIR)/symbol_table.cpp ast.o ir.o temp_var.o tensor_ir.o ir_gen.o
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(BISON_SRC) $(FLEX_SRC) $(SRC_DIR)/symbol_table.cpp ast.o ir.o temp_var.o tensor_ir.o ir_gen.o
+$(TARGET): $(FLEX_SRC) $(BISON_SRC) $(SRC_DIR)/symbol_table.cpp ast.o ir.o temp_var.o tensor_ir.o ir_gen.o semantic.o codegen.o optimizer.o
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(BISON_SRC) $(FLEX_SRC) $(SRC_DIR)/symbol_table.cpp ast.o ir.o temp_var.o tensor_ir.o ir_gen.o semantic.o codegen.o optimizer.o
 
 $(LEXER_BIN): $(FLEX_SRC) $(BISON_HDR) $(LEXER_DRV)
 	$(CXX) $(CXXFLAGS) -o $(LEXER_BIN) $(LEXER_DRV) $(FLEX_SRC)
 
-$(DEMO_BIN): $(DEMO_SRC) ast.o ir.o temp_var.o tensor_ir.o ir_gen.o $(SRC_DIR)/symbol_table.cpp
-	$(CXX) $(CXXFLAGS) -o $(DEMO_BIN) $(DEMO_SRC) ast.o ir.o temp_var.o tensor_ir.o ir_gen.o $(SRC_DIR)/symbol_table.cpp
+$(DEMO_BIN): $(DEMO_SRC) ast.o ir.o temp_var.o tensor_ir.o ir_gen.o semantic.o codegen.o optimizer.o $(SRC_DIR)/symbol_table.cpp
+	$(CXX) $(CXXFLAGS) -o $(DEMO_BIN) $(DEMO_SRC) ast.o ir.o temp_var.o tensor_ir.o ir_gen.o semantic.o codegen.o optimizer.o $(SRC_DIR)/symbol_table.cpp
 
 # ============================================================
 # Utility targets

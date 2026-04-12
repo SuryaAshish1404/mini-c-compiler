@@ -7,6 +7,14 @@
 #include <iostream>
 #include "symbol_table.h"
 
+extern "C" {
+#include "ast.h"
+#include "ir_gen.h"
+#include "semantic.h"
+#include "codegen.h"
+#include "optimizer.h"
+}
+
 extern int yylex();
 extern int yylineno;
 extern char* yytext;
@@ -17,6 +25,7 @@ void yyerror(const char* msg);
 SymbolTable sym_table;
 int error_count = 0;
 FILE* output_file = nullptr;
+ASTNode* root_ast = nullptr;
 
 bool check_tensor_compatibility(const std::string& lhs, const std::string& rhs, const std::string& op) {
     SymbolEntry* left = sym_table.lookup(lhs);
@@ -97,6 +106,7 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
 
 %code requires {
     #include <vector>
+    struct ASTNode;
 }
 
 %union {
@@ -104,6 +114,7 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
     double fval;
     char*  sval;
     std::vector<int>* dim_list;
+    ASTNode* node;
 }
 
 /* ---------- Token declarations ---------- */
@@ -147,6 +158,18 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
 /* ---------- Non-terminal types ---------- */
 %type <sval> type_specifier
 %type <dim_list> dimension_list
+%type <node> program declaration_list declaration
+%type <node> variable_declaration function_declaration tensor_declaration
+%type <node> compound_statement statement_list statement
+%type <node> expression_statement selection_statement iteration_statement
+%type <node> return_statement switch_statement break_statement
+%type <node> expression assignment_expression
+%type <node> logical_or_expression logical_and_expression
+%type <node> equality_expression relational_expression
+%type <node> additive_expression multiplicative_expression
+%type <node> unary_expression postfix_expression primary_expression
+%type <node> argument_list parameter_list parameter
+%type <node> case_list case_clause
 
 /* Start symbol */
 %start program
@@ -157,17 +180,30 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
 
 program
     : declaration_list
+        {
+            $$ = create_list_node(AST_PROGRAM);
+            if ($1) add_child($$, $1);
+            root_ast = $$;
+        }
     ;
 
 declaration_list
     : declaration_list declaration
+        {
+            $$ = $1;
+            if ($2) add_child($$, $2);
+        }
     | declaration
+        {
+            $$ = create_list_node(AST_DECLARATION_LIST);
+            if ($1) add_child($$, $1);
+        }
     ;
 
 declaration
-    : variable_declaration
-    | function_declaration
-    | tensor_declaration
+    : variable_declaration { $$ = $1; }
+    | function_declaration { $$ = $1; }
+    | tensor_declaration { $$ = $1; }
     ;
 
 /* ---------- Type specifiers ---------- */
@@ -183,11 +219,15 @@ variable_declaration
     : type_specifier TOKEN_IDENTIFIER TOKEN_SEMICOLON
         {
             sym_table.insert($2, $1, SymbolKind::VARIABLE, yylineno);
+            $$ = create_variable_decl_node($1, $2, NULL);
+            $$->line_number = yylineno;
             free($1); free($2);
         }
     | type_specifier TOKEN_IDENTIFIER TOKEN_ASSIGN expression TOKEN_SEMICOLON
         {
             sym_table.insert($2, $1, SymbolKind::VARIABLE, yylineno);
+            $$ = create_variable_decl_node($1, $2, $4);
+            $$->line_number = yylineno;
             free($1); free($2);
         }
     ;
@@ -197,6 +237,7 @@ tensor_declaration
     : TOKEN_TENSOR TOKEN_IDENTIFIER dimension_list TOKEN_SEMICOLON
         {
             sym_table.insert_tensor($2, *$3, yylineno);
+            $$ = create_tensor_decl_node($2, $3->data(), $3->size());
             free($2);
             delete $3;
         }
@@ -220,24 +261,35 @@ function_declaration
     : type_specifier TOKEN_IDENTIFIER TOKEN_LPAREN parameter_list TOKEN_RPAREN compound_statement
         {
             sym_table.insert($2, $1, SymbolKind::FUNCTION, yylineno);
+            $$ = create_function_decl_node($1, $2, $4, $6);
             free($1); free($2);
         }
     | type_specifier TOKEN_IDENTIFIER TOKEN_LPAREN TOKEN_RPAREN compound_statement
         {
             sym_table.insert($2, $1, SymbolKind::FUNCTION, yylineno);
+            $$ = create_function_decl_node($1, $2, NULL, $5);
             free($1); free($2);
         }
     ;
 
 parameter_list
     : parameter_list TOKEN_COMMA parameter
+        {
+            $$ = $1;
+            if ($3) add_child($$, $3);
+        }
     | parameter
+        {
+            $$ = create_list_node(AST_PARAM_LIST);
+            if ($1) add_child($$, $1);
+        }
     ;
 
 parameter
     : type_specifier TOKEN_IDENTIFIER
         {
             sym_table.insert($2, $1, SymbolKind::PARAMETER, yylineno);
+            $$ = create_variable_decl_node($1, $2, NULL);
             free($1); free($2);
         }
     ;
@@ -246,149 +298,340 @@ parameter
 compound_statement
     : TOKEN_LBRACE { sym_table.enter_scope(); }
       statement_list
-      TOKEN_RBRACE { sym_table.exit_scope(); }
+      TOKEN_RBRACE 
+        { 
+            sym_table.exit_scope();
+            $$ = create_node(AST_COMPOUND_STMT);
+            $$->body = $3;
+        }
     | TOKEN_LBRACE TOKEN_RBRACE
+        {
+            $$ = create_node(AST_COMPOUND_STMT);
+            $$->body = NULL;
+        }
     ;
 
 statement_list
     : statement_list statement
+        {
+            $$ = $1;
+            if ($2) add_child($$, $2);
+        }
     | statement
+        {
+            $$ = create_list_node(AST_STATEMENT_LIST);
+            if ($1) add_child($$, $1);
+        }
     ;
 
 statement
-    : expression_statement
-    | variable_declaration
-    | compound_statement
-    | selection_statement
-    | iteration_statement
-    | return_statement
-    | switch_statement
-    | break_statement
+    : expression_statement { $$ = $1; }
+    | variable_declaration { $$ = $1; }
+    | compound_statement { $$ = $1; }
+    | selection_statement { $$ = $1; }
+    | iteration_statement { $$ = $1; }
+    | return_statement { $$ = $1; }
+    | switch_statement { $$ = $1; }
+    | break_statement { $$ = $1; }
     ;
 
 expression_statement
     : expression TOKEN_SEMICOLON
+        {
+            $$ = create_node(AST_EXPR_STMT);
+            $$->left = $1;
+        }
     | TOKEN_SEMICOLON
+        {
+            $$ = create_node(AST_EXPR_STMT);
+            $$->left = NULL;
+        }
     ;
 
 /* ---------- Control flow ---------- */
 selection_statement
     : TOKEN_IF TOKEN_LPAREN expression TOKEN_RPAREN statement
+        {
+            $$ = create_if_node($3, $5, NULL);
+        }
     | TOKEN_IF TOKEN_LPAREN expression TOKEN_RPAREN statement TOKEN_ELSE statement
+        {
+            $$ = create_if_node($3, $5, $7);
+        }
     ;
 
 iteration_statement
     : TOKEN_WHILE TOKEN_LPAREN expression TOKEN_RPAREN statement
+        {
+            $$ = create_while_node($3, $5);
+        }
     | TOKEN_FOR TOKEN_LPAREN expression_statement expression_statement expression TOKEN_RPAREN statement
+        {
+            $$ = create_for_node($3, $4, $5, $7);
+        }
     | TOKEN_FOR TOKEN_LPAREN variable_declaration expression_statement expression TOKEN_RPAREN statement
+        {
+            $$ = create_for_node($3, $4, $5, $7);
+        }
     ;
 
 return_statement
     : TOKEN_RETURN expression TOKEN_SEMICOLON
+        {
+            $$ = create_return_node($2);
+        }
     | TOKEN_RETURN TOKEN_SEMICOLON
+        {
+            $$ = create_return_node(NULL);
+        }
     ;
 
 switch_statement
     : TOKEN_SWITCH TOKEN_LPAREN expression TOKEN_RPAREN TOKEN_LBRACE case_list TOKEN_RBRACE
+        {
+            $$ = create_node(AST_COMPOUND_STMT);
+            $$->condition = $3;
+            $$->body = $6;
+        }
     ;
 
 case_list
     : case_list case_clause
+        {
+            $$ = $1;
+            if ($2) add_child($$, $2);
+        }
     | case_clause
+        {
+            $$ = create_list_node(AST_STATEMENT_LIST);
+            if ($1) add_child($$, $1);
+        }
     ;
 
 case_clause
     : TOKEN_CASE TOKEN_INT_LITERAL TOKEN_COLON statement_list
+        {
+            $$ = create_node(AST_COMPOUND_STMT);
+            $$->int_value = $2;
+            $$->body = $4;
+        }
     | TOKEN_DEFAULT TOKEN_COLON statement_list
+        {
+            $$ = create_node(AST_COMPOUND_STMT);
+            $$->int_value = -1;
+            $$->body = $3;
+        }
     ;
 
 break_statement
     : TOKEN_BREAK TOKEN_SEMICOLON
+        {
+            $$ = create_node(AST_EXPR_STMT);
+        }
     ;
 
 /* ---------- Expressions ---------- */
 expression
-    : assignment_expression
+    : assignment_expression { $$ = $1; }
     ;
 
 assignment_expression
     : TOKEN_IDENTIFIER TOKEN_ASSIGN expression
-        { free($1); }
+        { 
+            $$ = create_assignment_node(create_identifier_node($1), $3);
+            $$->line_number = yylineno;
+            free($1);
+        }
     | TOKEN_IDENTIFIER TOKEN_PLUS_ASSIGN expression
-        { free($1); }
+        { 
+            ASTNode *id = create_identifier_node($1);
+            ASTNode *add = create_binary_node(AST_BINARY_OP, OP_ADD, id, $3);
+            $$ = create_assignment_node(id, add);
+            free($1);
+        }
     | TOKEN_IDENTIFIER TOKEN_MINUS_ASSIGN expression
-        { free($1); }
+        { 
+            ASTNode *id = create_identifier_node($1);
+            ASTNode *sub = create_binary_node(AST_BINARY_OP, OP_SUB, id, $3);
+            $$ = create_assignment_node(id, sub);
+            free($1);
+        }
     | TOKEN_IDENTIFIER TOKEN_STAR_ASSIGN expression
-        { free($1); }
+        { 
+            ASTNode *id = create_identifier_node($1);
+            ASTNode *mul = create_binary_node(AST_BINARY_OP, OP_MUL, id, $3);
+            $$ = create_assignment_node(id, mul);
+            free($1);
+        }
     | TOKEN_IDENTIFIER TOKEN_SLASH_ASSIGN expression
-        { free($1); }
-    | logical_or_expression
+        { 
+            ASTNode *id = create_identifier_node($1);
+            ASTNode *div = create_binary_node(AST_BINARY_OP, OP_DIV, id, $3);
+            $$ = create_assignment_node(id, div);
+            free($1);
+        }
+    | logical_or_expression { $$ = $1; }
     ;
 
 logical_or_expression
     : logical_or_expression TOKEN_OR logical_and_expression
-    | logical_and_expression
+        {
+            $$ = create_binary_node(AST_BINARY_OP, OP_OR, $1, $3);
+        }
+    | logical_and_expression { $$ = $1; }
     ;
 
 logical_and_expression
     : logical_and_expression TOKEN_AND equality_expression
-    | equality_expression
+        {
+            $$ = create_binary_node(AST_BINARY_OP, OP_AND, $1, $3);
+        }
+    | equality_expression { $$ = $1; }
     ;
 
 equality_expression
     : equality_expression TOKEN_EQ relational_expression
+        {
+            $$ = create_binary_node(AST_BINARY_OP, OP_EQ, $1, $3);
+        }
     | equality_expression TOKEN_NEQ relational_expression
-    | relational_expression
+        {
+            $$ = create_binary_node(AST_BINARY_OP, OP_NEQ, $1, $3);
+        }
+    | relational_expression { $$ = $1; }
     ;
 
 relational_expression
     : relational_expression TOKEN_LT additive_expression
+        {
+            $$ = create_binary_node(AST_BINARY_OP, OP_LT, $1, $3);
+        }
     | relational_expression TOKEN_GT additive_expression
+        {
+            $$ = create_binary_node(AST_BINARY_OP, OP_GT, $1, $3);
+        }
     | relational_expression TOKEN_LEQ additive_expression
+        {
+            $$ = create_binary_node(AST_BINARY_OP, OP_LEQ, $1, $3);
+        }
     | relational_expression TOKEN_GEQ additive_expression
-    | additive_expression
+        {
+            $$ = create_binary_node(AST_BINARY_OP, OP_GEQ, $1, $3);
+        }
+    | additive_expression { $$ = $1; }
     ;
 
 additive_expression
     : additive_expression TOKEN_PLUS multiplicative_expression
+        {
+            $$ = create_binary_node(AST_BINARY_OP, OP_ADD, $1, $3);
+        }
     | additive_expression TOKEN_MINUS multiplicative_expression
-    | multiplicative_expression
+        {
+            $$ = create_binary_node(AST_BINARY_OP, OP_SUB, $1, $3);
+        }
+    | multiplicative_expression { $$ = $1; }
     ;
 
 multiplicative_expression
     : multiplicative_expression TOKEN_STAR unary_expression
+        {
+            $$ = create_binary_node(AST_BINARY_OP, OP_MUL, $1, $3);
+        }
     | multiplicative_expression TOKEN_SLASH unary_expression
+        {
+            $$ = create_binary_node(AST_BINARY_OP, OP_DIV, $1, $3);
+        }
     | multiplicative_expression TOKEN_PERCENT unary_expression
-    | unary_expression
+        {
+            $$ = create_binary_node(AST_BINARY_OP, OP_MOD, $1, $3);
+        }
+    | unary_expression { $$ = $1; }
     ;
 
 unary_expression
     : TOKEN_MINUS unary_expression %prec UMINUS
+        {
+            $$ = create_unary_node(AST_UNARY_OP, OP_NEG, $2);
+        }
     | TOKEN_NOT unary_expression
-    | TOKEN_INCREMENT TOKEN_IDENTIFIER  { free($2); }
-    | TOKEN_DECREMENT TOKEN_IDENTIFIER  { free($2); }
-    | postfix_expression
+        {
+            $$ = create_unary_node(AST_UNARY_OP, OP_NOT, $2);
+        }
+    | TOKEN_INCREMENT TOKEN_IDENTIFIER
+        {
+            $$ = create_identifier_node($2);
+            free($2);
+        }
+    | TOKEN_DECREMENT TOKEN_IDENTIFIER
+        {
+            $$ = create_identifier_node($2);
+            free($2);
+        }
+    | postfix_expression { $$ = $1; }
     ;
 
 postfix_expression
-    : primary_expression
-    | TOKEN_IDENTIFIER TOKEN_INCREMENT  { free($1); }
-    | TOKEN_IDENTIFIER TOKEN_DECREMENT  { free($1); }
-    | TOKEN_IDENTIFIER TOKEN_LPAREN argument_list TOKEN_RPAREN  { free($1); }
-    | TOKEN_IDENTIFIER TOKEN_LPAREN TOKEN_RPAREN                { free($1); }
+    : primary_expression { $$ = $1; }
+    | TOKEN_IDENTIFIER TOKEN_INCREMENT
+        {
+            $$ = create_identifier_node($1);
+            free($1);
+        }
+    | TOKEN_IDENTIFIER TOKEN_DECREMENT
+        {
+            $$ = create_identifier_node($1);
+            free($1);
+        }
+    | TOKEN_IDENTIFIER TOKEN_LPAREN argument_list TOKEN_RPAREN
+        {
+            $$ = create_function_call_node($1, $3);
+            free($1);
+        }
+    | TOKEN_IDENTIFIER TOKEN_LPAREN TOKEN_RPAREN
+        {
+            $$ = create_function_call_node($1, NULL);
+            free($1);
+        }
     ;
 
 argument_list
     : argument_list TOKEN_COMMA expression
+        {
+            $$ = $1;
+            if ($3) add_child($$, $3);
+        }
     | expression
+        {
+            $$ = create_list_node(AST_ARG_LIST);
+            if ($1) add_child($$, $1);
+        }
     ;
 
 primary_expression
     : TOKEN_INT_LITERAL
+        {
+            $$ = create_number_node($1);
+        }
     | TOKEN_FLOAT_LITERAL
-    | TOKEN_STRING_LITERAL  { free($1); }
-    | TOKEN_IDENTIFIER      { free($1); }
+        {
+            $$ = create_float_node($1);
+        }
+    | TOKEN_STRING_LITERAL
+        {
+            $$ = create_string_node($1);
+            free($1);
+        }
+    | TOKEN_IDENTIFIER
+        {
+            $$ = create_identifier_node($1);
+            $$->line_number = yylineno;
+            free($1);
+        }
     | TOKEN_LPAREN expression TOKEN_RPAREN
+        {
+            $$ = $2;
+        }
     ;
 
 %%
@@ -415,7 +658,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Open output file if specified
     if (argc >= 3) {
         output_file = fopen(argv[2], "w");
         if (!output_file) {
@@ -424,12 +666,10 @@ int main(int argc, char* argv[]) {
     }
 
     yyin = file;
-
     std::cout << "Parsing '" << argv[1] << "'...\n" << std::endl;
-
     int result = yyparse();
-
     fclose(file);
+    
     if (output_file) {
         fclose(output_file);
         if (result == 0 && error_count == 0) {
@@ -441,8 +681,49 @@ int main(int argc, char* argv[]) {
 
     if (result == 0 && error_count == 0) {
         std::cout << "Parsing completed successfully. No errors found.\n";
+        
+        if (root_ast) {
+            SemanticResult* sem_result = create_semantic_result();
+            semantic_analyze(root_ast, &sym_table, sem_result);
+            
+            if (sem_result->error_count > 0) {
+                std::cerr << "Semantic analysis failed with " << sem_result->error_count 
+                         << " error(s) and " << sem_result->warning_count << " warning(s).\n";
+                free(sem_result);
+                free_ast(root_ast);
+                return 1;
+            }
+            
+            if (sem_result->warning_count > 0) {
+                std::cout << "Semantic analysis completed with " << sem_result->warning_count 
+                         << " warning(s).\n";
+            }
+            free(sem_result);
+            
+            IRList* ir = generate_ir_from_ast(root_ast, &sym_table);
+            if (ir) {
+                int opt_changes = optimize_ir(ir);
+                if (opt_changes > 0) {
+                    std::cout << "Optimizations applied: " << opt_changes << " changes\n";
+                }
+                
+                if (argc >= 4) {
+                    FILE* asm_file = fopen(argv[3], "w");
+                    if (asm_file) {
+                        generate_assembly(ir, asm_file);
+                        fclose(asm_file);
+                        std::cout << "Assembly code written to '" << argv[3] << "'\n";
+                    }
+                }
+                free_ir_list(ir);
+            }
+            free_ast(root_ast);
+        }
     } else {
         std::cerr << "Parsing finished with " << error_count << " error(s).\n";
+        if (root_ast) {
+            free_ast(root_ast);
+        }
     }
 
     return (result == 0 && error_count == 0) ? 0 : 1;

@@ -1,8 +1,3 @@
-
-
-
-
-
 int globalCount;
 float pi = 3.14;
 

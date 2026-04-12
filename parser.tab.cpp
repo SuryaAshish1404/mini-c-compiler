@@ -77,6 +77,14 @@
 #include <iostream>
 #include "symbol_table.h"
 
+extern "C" {
+#include "ast.h"
+#include "ir_gen.h"
+#include "semantic.h"
+#include "codegen.h"
+#include "optimizer.h"
+}
+
 extern int yylex();
 extern int yylineno;
 extern char* yytext;
@@ -87,6 +95,7 @@ void yyerror(const char* msg);
 SymbolTable sym_table;
 int error_count = 0;
 FILE* output_file = nullptr;
+ASTNode* root_ast = nullptr;
 
 bool check_tensor_compatibility(const std::string& lhs, const std::string& rhs, const std::string& op) {
     SymbolEntry* left = sym_table.lookup(lhs);
@@ -164,7 +173,7 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
     }
 }
 
-#line 168 "parser.tab.cpp"
+#line 177 "parser.tab.cpp"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -669,16 +678,16 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   159,   159,   163,   164,   168,   169,   170,   175,   176,
-     177,   178,   183,   188,   197,   206,   211,   220,   225,   233,
-     234,   238,   247,   247,   250,   254,   255,   259,   260,   261,
-     262,   263,   264,   265,   266,   270,   271,   276,   277,   281,
-     282,   283,   287,   288,   292,   296,   297,   301,   302,   306,
-     311,   315,   317,   319,   321,   323,   325,   329,   330,   334,
-     335,   339,   340,   341,   345,   346,   347,   348,   349,   353,
-     354,   355,   359,   360,   361,   362,   366,   367,   368,   369,
-     370,   374,   375,   376,   377,   378,   382,   383,   387,   388,
-     389,   390,   391
+       0,   182,   182,   191,   196,   204,   205,   206,   211,   212,
+     213,   214,   219,   226,   237,   247,   252,   261,   267,   276,
+     281,   289,   299,   299,   307,   315,   320,   328,   329,   330,
+     331,   332,   333,   334,   335,   339,   344,   353,   357,   364,
+     368,   372,   379,   383,   390,   399,   404,   412,   418,   427,
+     435,   439,   445,   452,   459,   466,   473,   477,   481,   485,
+     489,   493,   497,   501,   505,   509,   513,   517,   521,   525,
+     529,   533,   537,   541,   545,   549,   553,   557,   561,   566,
+     571,   575,   576,   581,   586,   591,   599,   604,   612,   616,
+     620,   625,   631
 };
 #endif
 
@@ -1384,195 +1393,747 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
+  case 2: /* program: declaration_list  */
+#line 183 "src/parser.y"
+        {
+            (yyval.node) = create_list_node(AST_PROGRAM);
+            if ((yyvsp[0].node)) add_child((yyval.node), (yyvsp[0].node));
+            root_ast = (yyval.node);
+        }
+#line 1404 "parser.tab.cpp"
+    break;
+
+  case 3: /* declaration_list: declaration_list declaration  */
+#line 192 "src/parser.y"
+        {
+            (yyval.node) = (yyvsp[-1].node);
+            if ((yyvsp[0].node)) add_child((yyval.node), (yyvsp[0].node));
+        }
+#line 1413 "parser.tab.cpp"
+    break;
+
+  case 4: /* declaration_list: declaration  */
+#line 197 "src/parser.y"
+        {
+            (yyval.node) = create_list_node(AST_DECLARATION_LIST);
+            if ((yyvsp[0].node)) add_child((yyval.node), (yyvsp[0].node));
+        }
+#line 1422 "parser.tab.cpp"
+    break;
+
+  case 5: /* declaration: variable_declaration  */
+#line 204 "src/parser.y"
+                           { (yyval.node) = (yyvsp[0].node); }
+#line 1428 "parser.tab.cpp"
+    break;
+
+  case 6: /* declaration: function_declaration  */
+#line 205 "src/parser.y"
+                           { (yyval.node) = (yyvsp[0].node); }
+#line 1434 "parser.tab.cpp"
+    break;
+
+  case 7: /* declaration: tensor_declaration  */
+#line 206 "src/parser.y"
+                         { (yyval.node) = (yyvsp[0].node); }
+#line 1440 "parser.tab.cpp"
+    break;
+
   case 8: /* type_specifier: TOKEN_INT  */
-#line 175 "src/parser.y"
+#line 211 "src/parser.y"
                   { (yyval.sval) = strdup("int");   }
-#line 1391 "parser.tab.cpp"
+#line 1446 "parser.tab.cpp"
     break;
 
   case 9: /* type_specifier: TOKEN_FLOAT  */
-#line 176 "src/parser.y"
+#line 212 "src/parser.y"
                   { (yyval.sval) = strdup("float"); }
-#line 1397 "parser.tab.cpp"
+#line 1452 "parser.tab.cpp"
     break;
 
   case 10: /* type_specifier: TOKEN_CHAR  */
-#line 177 "src/parser.y"
+#line 213 "src/parser.y"
                   { (yyval.sval) = strdup("char");  }
-#line 1403 "parser.tab.cpp"
+#line 1458 "parser.tab.cpp"
     break;
 
   case 11: /* type_specifier: TOKEN_VOID  */
-#line 178 "src/parser.y"
+#line 214 "src/parser.y"
                   { (yyval.sval) = strdup("void");  }
-#line 1409 "parser.tab.cpp"
+#line 1464 "parser.tab.cpp"
     break;
 
   case 12: /* variable_declaration: type_specifier TOKEN_IDENTIFIER TOKEN_SEMICOLON  */
-#line 184 "src/parser.y"
+#line 220 "src/parser.y"
         {
             sym_table.insert((yyvsp[-1].sval), (yyvsp[-2].sval), SymbolKind::VARIABLE, yylineno);
+            (yyval.node) = create_variable_decl_node((yyvsp[-2].sval), (yyvsp[-1].sval), NULL);
+            (yyval.node)->line_number = yylineno;
             free((yyvsp[-2].sval)); free((yyvsp[-1].sval));
         }
-#line 1418 "parser.tab.cpp"
+#line 1475 "parser.tab.cpp"
     break;
 
   case 13: /* variable_declaration: type_specifier TOKEN_IDENTIFIER TOKEN_ASSIGN expression TOKEN_SEMICOLON  */
-#line 189 "src/parser.y"
+#line 227 "src/parser.y"
         {
             sym_table.insert((yyvsp[-3].sval), (yyvsp[-4].sval), SymbolKind::VARIABLE, yylineno);
+            (yyval.node) = create_variable_decl_node((yyvsp[-4].sval), (yyvsp[-3].sval), (yyvsp[-1].node));
+            (yyval.node)->line_number = yylineno;
             free((yyvsp[-4].sval)); free((yyvsp[-3].sval));
         }
-#line 1427 "parser.tab.cpp"
+#line 1486 "parser.tab.cpp"
     break;
 
   case 14: /* tensor_declaration: TOKEN_TENSOR TOKEN_IDENTIFIER dimension_list TOKEN_SEMICOLON  */
-#line 198 "src/parser.y"
+#line 238 "src/parser.y"
         {
             sym_table.insert_tensor((yyvsp[-2].sval), *(yyvsp[-1].dim_list), yylineno);
+            (yyval.node) = create_tensor_decl_node((yyvsp[-2].sval), (yyvsp[-1].dim_list)->data(), (yyvsp[-1].dim_list)->size());
             free((yyvsp[-2].sval));
             delete (yyvsp[-1].dim_list);
         }
-#line 1437 "parser.tab.cpp"
+#line 1497 "parser.tab.cpp"
     break;
 
   case 15: /* dimension_list: dimension_list TOKEN_LBRACKET TOKEN_INT_LITERAL TOKEN_RBRACKET  */
-#line 207 "src/parser.y"
+#line 248 "src/parser.y"
         {
             (yyval.dim_list) = (yyvsp[-3].dim_list);
             (yyval.dim_list)->push_back((yyvsp[-1].ival));
         }
-#line 1446 "parser.tab.cpp"
+#line 1506 "parser.tab.cpp"
     break;
 
   case 16: /* dimension_list: TOKEN_LBRACKET TOKEN_INT_LITERAL TOKEN_RBRACKET  */
-#line 212 "src/parser.y"
+#line 253 "src/parser.y"
         {
             (yyval.dim_list) = new std::vector<int>();
             (yyval.dim_list)->push_back((yyvsp[-1].ival));
         }
-#line 1455 "parser.tab.cpp"
+#line 1515 "parser.tab.cpp"
     break;
 
   case 17: /* function_declaration: type_specifier TOKEN_IDENTIFIER TOKEN_LPAREN parameter_list TOKEN_RPAREN compound_statement  */
-#line 221 "src/parser.y"
+#line 262 "src/parser.y"
         {
             sym_table.insert((yyvsp[-4].sval), (yyvsp[-5].sval), SymbolKind::FUNCTION, yylineno);
+            (yyval.node) = create_function_decl_node((yyvsp[-5].sval), (yyvsp[-4].sval), (yyvsp[-2].node), (yyvsp[0].node));
             free((yyvsp[-5].sval)); free((yyvsp[-4].sval));
         }
-#line 1464 "parser.tab.cpp"
+#line 1525 "parser.tab.cpp"
     break;
 
   case 18: /* function_declaration: type_specifier TOKEN_IDENTIFIER TOKEN_LPAREN TOKEN_RPAREN compound_statement  */
-#line 226 "src/parser.y"
+#line 268 "src/parser.y"
         {
             sym_table.insert((yyvsp[-3].sval), (yyvsp[-4].sval), SymbolKind::FUNCTION, yylineno);
+            (yyval.node) = create_function_decl_node((yyvsp[-4].sval), (yyvsp[-3].sval), NULL, (yyvsp[0].node));
             free((yyvsp[-4].sval)); free((yyvsp[-3].sval));
         }
-#line 1473 "parser.tab.cpp"
+#line 1535 "parser.tab.cpp"
+    break;
+
+  case 19: /* parameter_list: parameter_list TOKEN_COMMA parameter  */
+#line 277 "src/parser.y"
+        {
+            (yyval.node) = (yyvsp[-2].node);
+            if ((yyvsp[0].node)) add_child((yyval.node), (yyvsp[0].node));
+        }
+#line 1544 "parser.tab.cpp"
+    break;
+
+  case 20: /* parameter_list: parameter  */
+#line 282 "src/parser.y"
+        {
+            (yyval.node) = create_list_node(AST_PARAM_LIST);
+            if ((yyvsp[0].node)) add_child((yyval.node), (yyvsp[0].node));
+        }
+#line 1553 "parser.tab.cpp"
     break;
 
   case 21: /* parameter: type_specifier TOKEN_IDENTIFIER  */
-#line 239 "src/parser.y"
+#line 290 "src/parser.y"
         {
             sym_table.insert((yyvsp[0].sval), (yyvsp[-1].sval), SymbolKind::PARAMETER, yylineno);
+            (yyval.node) = create_variable_decl_node((yyvsp[-1].sval), (yyvsp[0].sval), NULL);
             free((yyvsp[-1].sval)); free((yyvsp[0].sval));
         }
-#line 1482 "parser.tab.cpp"
+#line 1563 "parser.tab.cpp"
     break;
 
   case 22: /* $@1: %empty  */
-#line 247 "src/parser.y"
+#line 299 "src/parser.y"
                    { sym_table.enter_scope(); }
-#line 1488 "parser.tab.cpp"
+#line 1569 "parser.tab.cpp"
     break;
 
   case 23: /* compound_statement: TOKEN_LBRACE $@1 statement_list TOKEN_RBRACE  */
-#line 249 "src/parser.y"
-                   { sym_table.exit_scope(); }
-#line 1494 "parser.tab.cpp"
+#line 302 "src/parser.y"
+        { 
+            sym_table.exit_scope();
+            (yyval.node) = create_node(AST_COMPOUND_STMT);
+            (yyval.node)->body = (yyvsp[-1].node);
+        }
+#line 1579 "parser.tab.cpp"
+    break;
+
+  case 24: /* compound_statement: TOKEN_LBRACE TOKEN_RBRACE  */
+#line 308 "src/parser.y"
+        {
+            (yyval.node) = create_node(AST_COMPOUND_STMT);
+            (yyval.node)->body = NULL;
+        }
+#line 1588 "parser.tab.cpp"
+    break;
+
+  case 25: /* statement_list: statement_list statement  */
+#line 316 "src/parser.y"
+        {
+            (yyval.node) = (yyvsp[-1].node);
+            if ((yyvsp[0].node)) add_child((yyval.node), (yyvsp[0].node));
+        }
+#line 1597 "parser.tab.cpp"
+    break;
+
+  case 26: /* statement_list: statement  */
+#line 321 "src/parser.y"
+        {
+            (yyval.node) = create_list_node(AST_STATEMENT_LIST);
+            if ((yyvsp[0].node)) add_child((yyval.node), (yyvsp[0].node));
+        }
+#line 1606 "parser.tab.cpp"
+    break;
+
+  case 27: /* statement: expression_statement  */
+#line 328 "src/parser.y"
+                           { (yyval.node) = (yyvsp[0].node); }
+#line 1612 "parser.tab.cpp"
+    break;
+
+  case 28: /* statement: variable_declaration  */
+#line 329 "src/parser.y"
+                           { (yyval.node) = (yyvsp[0].node); }
+#line 1618 "parser.tab.cpp"
+    break;
+
+  case 29: /* statement: compound_statement  */
+#line 330 "src/parser.y"
+                         { (yyval.node) = (yyvsp[0].node); }
+#line 1624 "parser.tab.cpp"
+    break;
+
+  case 30: /* statement: selection_statement  */
+#line 331 "src/parser.y"
+                          { (yyval.node) = (yyvsp[0].node); }
+#line 1630 "parser.tab.cpp"
+    break;
+
+  case 31: /* statement: iteration_statement  */
+#line 332 "src/parser.y"
+                          { (yyval.node) = (yyvsp[0].node); }
+#line 1636 "parser.tab.cpp"
+    break;
+
+  case 32: /* statement: return_statement  */
+#line 333 "src/parser.y"
+                       { (yyval.node) = (yyvsp[0].node); }
+#line 1642 "parser.tab.cpp"
+    break;
+
+  case 33: /* statement: switch_statement  */
+#line 334 "src/parser.y"
+                       { (yyval.node) = (yyvsp[0].node); }
+#line 1648 "parser.tab.cpp"
+    break;
+
+  case 34: /* statement: break_statement  */
+#line 335 "src/parser.y"
+                      { (yyval.node) = (yyvsp[0].node); }
+#line 1654 "parser.tab.cpp"
+    break;
+
+  case 35: /* expression_statement: expression TOKEN_SEMICOLON  */
+#line 340 "src/parser.y"
+        {
+            (yyval.node) = create_node(AST_EXPR_STMT);
+            (yyval.node)->left = (yyvsp[-1].node);
+        }
+#line 1663 "parser.tab.cpp"
+    break;
+
+  case 36: /* expression_statement: TOKEN_SEMICOLON  */
+#line 345 "src/parser.y"
+        {
+            (yyval.node) = create_node(AST_EXPR_STMT);
+            (yyval.node)->left = NULL;
+        }
+#line 1672 "parser.tab.cpp"
+    break;
+
+  case 37: /* selection_statement: TOKEN_IF TOKEN_LPAREN expression TOKEN_RPAREN statement  */
+#line 354 "src/parser.y"
+        {
+            (yyval.node) = create_if_node((yyvsp[-2].node), (yyvsp[0].node), NULL);
+        }
+#line 1680 "parser.tab.cpp"
+    break;
+
+  case 38: /* selection_statement: TOKEN_IF TOKEN_LPAREN expression TOKEN_RPAREN statement TOKEN_ELSE statement  */
+#line 358 "src/parser.y"
+        {
+            (yyval.node) = create_if_node((yyvsp[-4].node), (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1688 "parser.tab.cpp"
+    break;
+
+  case 39: /* iteration_statement: TOKEN_WHILE TOKEN_LPAREN expression TOKEN_RPAREN statement  */
+#line 365 "src/parser.y"
+        {
+            (yyval.node) = create_while_node((yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1696 "parser.tab.cpp"
+    break;
+
+  case 40: /* iteration_statement: TOKEN_FOR TOKEN_LPAREN expression_statement expression_statement expression TOKEN_RPAREN statement  */
+#line 369 "src/parser.y"
+        {
+            (yyval.node) = create_for_node((yyvsp[-4].node), (yyvsp[-3].node), (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1704 "parser.tab.cpp"
+    break;
+
+  case 41: /* iteration_statement: TOKEN_FOR TOKEN_LPAREN variable_declaration expression_statement expression TOKEN_RPAREN statement  */
+#line 373 "src/parser.y"
+        {
+            (yyval.node) = create_for_node((yyvsp[-4].node), (yyvsp[-3].node), (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1712 "parser.tab.cpp"
+    break;
+
+  case 42: /* return_statement: TOKEN_RETURN expression TOKEN_SEMICOLON  */
+#line 380 "src/parser.y"
+        {
+            (yyval.node) = create_return_node((yyvsp[-1].node));
+        }
+#line 1720 "parser.tab.cpp"
+    break;
+
+  case 43: /* return_statement: TOKEN_RETURN TOKEN_SEMICOLON  */
+#line 384 "src/parser.y"
+        {
+            (yyval.node) = create_return_node(NULL);
+        }
+#line 1728 "parser.tab.cpp"
+    break;
+
+  case 44: /* switch_statement: TOKEN_SWITCH TOKEN_LPAREN expression TOKEN_RPAREN TOKEN_LBRACE case_list TOKEN_RBRACE  */
+#line 391 "src/parser.y"
+        {
+            (yyval.node) = create_node(AST_COMPOUND_STMT);
+            (yyval.node)->condition = (yyvsp[-4].node);
+            (yyval.node)->body = (yyvsp[-1].node);
+        }
+#line 1738 "parser.tab.cpp"
+    break;
+
+  case 45: /* case_list: case_list case_clause  */
+#line 400 "src/parser.y"
+        {
+            (yyval.node) = (yyvsp[-1].node);
+            if ((yyvsp[0].node)) add_child((yyval.node), (yyvsp[0].node));
+        }
+#line 1747 "parser.tab.cpp"
+    break;
+
+  case 46: /* case_list: case_clause  */
+#line 405 "src/parser.y"
+        {
+            (yyval.node) = create_list_node(AST_STATEMENT_LIST);
+            if ((yyvsp[0].node)) add_child((yyval.node), (yyvsp[0].node));
+        }
+#line 1756 "parser.tab.cpp"
+    break;
+
+  case 47: /* case_clause: TOKEN_CASE TOKEN_INT_LITERAL TOKEN_COLON statement_list  */
+#line 413 "src/parser.y"
+        {
+            (yyval.node) = create_node(AST_COMPOUND_STMT);
+            (yyval.node)->int_value = (yyvsp[-2].ival);
+            (yyval.node)->body = (yyvsp[0].node);
+        }
+#line 1766 "parser.tab.cpp"
+    break;
+
+  case 48: /* case_clause: TOKEN_DEFAULT TOKEN_COLON statement_list  */
+#line 419 "src/parser.y"
+        {
+            (yyval.node) = create_node(AST_COMPOUND_STMT);
+            (yyval.node)->int_value = -1;
+            (yyval.node)->body = (yyvsp[0].node);
+        }
+#line 1776 "parser.tab.cpp"
+    break;
+
+  case 49: /* break_statement: TOKEN_BREAK TOKEN_SEMICOLON  */
+#line 428 "src/parser.y"
+        {
+            (yyval.node) = create_node(AST_EXPR_STMT);
+        }
+#line 1784 "parser.tab.cpp"
+    break;
+
+  case 50: /* expression: assignment_expression  */
+#line 435 "src/parser.y"
+                            { (yyval.node) = (yyvsp[0].node); }
+#line 1790 "parser.tab.cpp"
     break;
 
   case 51: /* assignment_expression: TOKEN_IDENTIFIER TOKEN_ASSIGN expression  */
-#line 316 "src/parser.y"
-        { free((yyvsp[-2].sval)); }
-#line 1500 "parser.tab.cpp"
+#line 440 "src/parser.y"
+        { 
+            (yyval.node) = create_assignment_node(create_identifier_node((yyvsp[-2].sval)), (yyvsp[0].node));
+            (yyval.node)->line_number = yylineno;
+            free((yyvsp[-2].sval));
+        }
+#line 1800 "parser.tab.cpp"
     break;
 
   case 52: /* assignment_expression: TOKEN_IDENTIFIER TOKEN_PLUS_ASSIGN expression  */
-#line 318 "src/parser.y"
-        { free((yyvsp[-2].sval)); }
-#line 1506 "parser.tab.cpp"
+#line 446 "src/parser.y"
+        { 
+            ASTNode *id = create_identifier_node((yyvsp[-2].sval));
+            ASTNode *add = create_binary_node(AST_BINARY_OP, OP_ADD, id, (yyvsp[0].node));
+            (yyval.node) = create_assignment_node(id, add);
+            free((yyvsp[-2].sval));
+        }
+#line 1811 "parser.tab.cpp"
     break;
 
   case 53: /* assignment_expression: TOKEN_IDENTIFIER TOKEN_MINUS_ASSIGN expression  */
-#line 320 "src/parser.y"
-        { free((yyvsp[-2].sval)); }
-#line 1512 "parser.tab.cpp"
+#line 453 "src/parser.y"
+        { 
+            ASTNode *id = create_identifier_node((yyvsp[-2].sval));
+            ASTNode *sub = create_binary_node(AST_BINARY_OP, OP_SUB, id, (yyvsp[0].node));
+            (yyval.node) = create_assignment_node(id, sub);
+            free((yyvsp[-2].sval));
+        }
+#line 1822 "parser.tab.cpp"
     break;
 
   case 54: /* assignment_expression: TOKEN_IDENTIFIER TOKEN_STAR_ASSIGN expression  */
-#line 322 "src/parser.y"
-        { free((yyvsp[-2].sval)); }
-#line 1518 "parser.tab.cpp"
+#line 460 "src/parser.y"
+        { 
+            ASTNode *id = create_identifier_node((yyvsp[-2].sval));
+            ASTNode *mul = create_binary_node(AST_BINARY_OP, OP_MUL, id, (yyvsp[0].node));
+            (yyval.node) = create_assignment_node(id, mul);
+            free((yyvsp[-2].sval));
+        }
+#line 1833 "parser.tab.cpp"
     break;
 
   case 55: /* assignment_expression: TOKEN_IDENTIFIER TOKEN_SLASH_ASSIGN expression  */
-#line 324 "src/parser.y"
-        { free((yyvsp[-2].sval)); }
-#line 1524 "parser.tab.cpp"
+#line 467 "src/parser.y"
+        { 
+            ASTNode *id = create_identifier_node((yyvsp[-2].sval));
+            ASTNode *div = create_binary_node(AST_BINARY_OP, OP_DIV, id, (yyvsp[0].node));
+            (yyval.node) = create_assignment_node(id, div);
+            free((yyvsp[-2].sval));
+        }
+#line 1844 "parser.tab.cpp"
+    break;
+
+  case 56: /* assignment_expression: logical_or_expression  */
+#line 473 "src/parser.y"
+                            { (yyval.node) = (yyvsp[0].node); }
+#line 1850 "parser.tab.cpp"
+    break;
+
+  case 57: /* logical_or_expression: logical_or_expression TOKEN_OR logical_and_expression  */
+#line 478 "src/parser.y"
+        {
+            (yyval.node) = create_binary_node(AST_BINARY_OP, OP_OR, (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1858 "parser.tab.cpp"
+    break;
+
+  case 58: /* logical_or_expression: logical_and_expression  */
+#line 481 "src/parser.y"
+                             { (yyval.node) = (yyvsp[0].node); }
+#line 1864 "parser.tab.cpp"
+    break;
+
+  case 59: /* logical_and_expression: logical_and_expression TOKEN_AND equality_expression  */
+#line 486 "src/parser.y"
+        {
+            (yyval.node) = create_binary_node(AST_BINARY_OP, OP_AND, (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1872 "parser.tab.cpp"
+    break;
+
+  case 60: /* logical_and_expression: equality_expression  */
+#line 489 "src/parser.y"
+                          { (yyval.node) = (yyvsp[0].node); }
+#line 1878 "parser.tab.cpp"
+    break;
+
+  case 61: /* equality_expression: equality_expression TOKEN_EQ relational_expression  */
+#line 494 "src/parser.y"
+        {
+            (yyval.node) = create_binary_node(AST_BINARY_OP, OP_EQ, (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1886 "parser.tab.cpp"
+    break;
+
+  case 62: /* equality_expression: equality_expression TOKEN_NEQ relational_expression  */
+#line 498 "src/parser.y"
+        {
+            (yyval.node) = create_binary_node(AST_BINARY_OP, OP_NEQ, (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1894 "parser.tab.cpp"
+    break;
+
+  case 63: /* equality_expression: relational_expression  */
+#line 501 "src/parser.y"
+                            { (yyval.node) = (yyvsp[0].node); }
+#line 1900 "parser.tab.cpp"
+    break;
+
+  case 64: /* relational_expression: relational_expression TOKEN_LT additive_expression  */
+#line 506 "src/parser.y"
+        {
+            (yyval.node) = create_binary_node(AST_BINARY_OP, OP_LT, (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1908 "parser.tab.cpp"
+    break;
+
+  case 65: /* relational_expression: relational_expression TOKEN_GT additive_expression  */
+#line 510 "src/parser.y"
+        {
+            (yyval.node) = create_binary_node(AST_BINARY_OP, OP_GT, (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1916 "parser.tab.cpp"
+    break;
+
+  case 66: /* relational_expression: relational_expression TOKEN_LEQ additive_expression  */
+#line 514 "src/parser.y"
+        {
+            (yyval.node) = create_binary_node(AST_BINARY_OP, OP_LEQ, (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1924 "parser.tab.cpp"
+    break;
+
+  case 67: /* relational_expression: relational_expression TOKEN_GEQ additive_expression  */
+#line 518 "src/parser.y"
+        {
+            (yyval.node) = create_binary_node(AST_BINARY_OP, OP_GEQ, (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1932 "parser.tab.cpp"
+    break;
+
+  case 68: /* relational_expression: additive_expression  */
+#line 521 "src/parser.y"
+                          { (yyval.node) = (yyvsp[0].node); }
+#line 1938 "parser.tab.cpp"
+    break;
+
+  case 69: /* additive_expression: additive_expression TOKEN_PLUS multiplicative_expression  */
+#line 526 "src/parser.y"
+        {
+            (yyval.node) = create_binary_node(AST_BINARY_OP, OP_ADD, (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1946 "parser.tab.cpp"
+    break;
+
+  case 70: /* additive_expression: additive_expression TOKEN_MINUS multiplicative_expression  */
+#line 530 "src/parser.y"
+        {
+            (yyval.node) = create_binary_node(AST_BINARY_OP, OP_SUB, (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1954 "parser.tab.cpp"
+    break;
+
+  case 71: /* additive_expression: multiplicative_expression  */
+#line 533 "src/parser.y"
+                                { (yyval.node) = (yyvsp[0].node); }
+#line 1960 "parser.tab.cpp"
+    break;
+
+  case 72: /* multiplicative_expression: multiplicative_expression TOKEN_STAR unary_expression  */
+#line 538 "src/parser.y"
+        {
+            (yyval.node) = create_binary_node(AST_BINARY_OP, OP_MUL, (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1968 "parser.tab.cpp"
+    break;
+
+  case 73: /* multiplicative_expression: multiplicative_expression TOKEN_SLASH unary_expression  */
+#line 542 "src/parser.y"
+        {
+            (yyval.node) = create_binary_node(AST_BINARY_OP, OP_DIV, (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1976 "parser.tab.cpp"
+    break;
+
+  case 74: /* multiplicative_expression: multiplicative_expression TOKEN_PERCENT unary_expression  */
+#line 546 "src/parser.y"
+        {
+            (yyval.node) = create_binary_node(AST_BINARY_OP, OP_MOD, (yyvsp[-2].node), (yyvsp[0].node));
+        }
+#line 1984 "parser.tab.cpp"
+    break;
+
+  case 75: /* multiplicative_expression: unary_expression  */
+#line 549 "src/parser.y"
+                       { (yyval.node) = (yyvsp[0].node); }
+#line 1990 "parser.tab.cpp"
+    break;
+
+  case 76: /* unary_expression: TOKEN_MINUS unary_expression  */
+#line 554 "src/parser.y"
+        {
+            (yyval.node) = create_unary_node(AST_UNARY_OP, OP_NEG, (yyvsp[0].node));
+        }
+#line 1998 "parser.tab.cpp"
+    break;
+
+  case 77: /* unary_expression: TOKEN_NOT unary_expression  */
+#line 558 "src/parser.y"
+        {
+            (yyval.node) = create_unary_node(AST_UNARY_OP, OP_NOT, (yyvsp[0].node));
+        }
+#line 2006 "parser.tab.cpp"
     break;
 
   case 78: /* unary_expression: TOKEN_INCREMENT TOKEN_IDENTIFIER  */
-#line 368 "src/parser.y"
-                                        { free((yyvsp[0].sval)); }
-#line 1530 "parser.tab.cpp"
+#line 562 "src/parser.y"
+        {
+            (yyval.node) = create_identifier_node((yyvsp[0].sval));
+            free((yyvsp[0].sval));
+        }
+#line 2015 "parser.tab.cpp"
     break;
 
   case 79: /* unary_expression: TOKEN_DECREMENT TOKEN_IDENTIFIER  */
-#line 369 "src/parser.y"
-                                        { free((yyvsp[0].sval)); }
-#line 1536 "parser.tab.cpp"
+#line 567 "src/parser.y"
+        {
+            (yyval.node) = create_identifier_node((yyvsp[0].sval));
+            free((yyvsp[0].sval));
+        }
+#line 2024 "parser.tab.cpp"
+    break;
+
+  case 80: /* unary_expression: postfix_expression  */
+#line 571 "src/parser.y"
+                         { (yyval.node) = (yyvsp[0].node); }
+#line 2030 "parser.tab.cpp"
+    break;
+
+  case 81: /* postfix_expression: primary_expression  */
+#line 575 "src/parser.y"
+                         { (yyval.node) = (yyvsp[0].node); }
+#line 2036 "parser.tab.cpp"
     break;
 
   case 82: /* postfix_expression: TOKEN_IDENTIFIER TOKEN_INCREMENT  */
-#line 375 "src/parser.y"
-                                        { free((yyvsp[-1].sval)); }
-#line 1542 "parser.tab.cpp"
+#line 577 "src/parser.y"
+        {
+            (yyval.node) = create_identifier_node((yyvsp[-1].sval));
+            free((yyvsp[-1].sval));
+        }
+#line 2045 "parser.tab.cpp"
     break;
 
   case 83: /* postfix_expression: TOKEN_IDENTIFIER TOKEN_DECREMENT  */
-#line 376 "src/parser.y"
-                                        { free((yyvsp[-1].sval)); }
-#line 1548 "parser.tab.cpp"
+#line 582 "src/parser.y"
+        {
+            (yyval.node) = create_identifier_node((yyvsp[-1].sval));
+            free((yyvsp[-1].sval));
+        }
+#line 2054 "parser.tab.cpp"
     break;
 
   case 84: /* postfix_expression: TOKEN_IDENTIFIER TOKEN_LPAREN argument_list TOKEN_RPAREN  */
-#line 377 "src/parser.y"
-                                                                { free((yyvsp[-3].sval)); }
-#line 1554 "parser.tab.cpp"
+#line 587 "src/parser.y"
+        {
+            (yyval.node) = create_function_call_node((yyvsp[-3].sval), (yyvsp[-1].node));
+            free((yyvsp[-3].sval));
+        }
+#line 2063 "parser.tab.cpp"
     break;
 
   case 85: /* postfix_expression: TOKEN_IDENTIFIER TOKEN_LPAREN TOKEN_RPAREN  */
-#line 378 "src/parser.y"
-                                                                { free((yyvsp[-2].sval)); }
-#line 1560 "parser.tab.cpp"
+#line 592 "src/parser.y"
+        {
+            (yyval.node) = create_function_call_node((yyvsp[-2].sval), NULL);
+            free((yyvsp[-2].sval));
+        }
+#line 2072 "parser.tab.cpp"
+    break;
+
+  case 86: /* argument_list: argument_list TOKEN_COMMA expression  */
+#line 600 "src/parser.y"
+        {
+            (yyval.node) = (yyvsp[-2].node);
+            if ((yyvsp[0].node)) add_child((yyval.node), (yyvsp[0].node));
+        }
+#line 2081 "parser.tab.cpp"
+    break;
+
+  case 87: /* argument_list: expression  */
+#line 605 "src/parser.y"
+        {
+            (yyval.node) = create_list_node(AST_ARG_LIST);
+            if ((yyvsp[0].node)) add_child((yyval.node), (yyvsp[0].node));
+        }
+#line 2090 "parser.tab.cpp"
+    break;
+
+  case 88: /* primary_expression: TOKEN_INT_LITERAL  */
+#line 613 "src/parser.y"
+        {
+            (yyval.node) = create_number_node((yyvsp[0].ival));
+        }
+#line 2098 "parser.tab.cpp"
+    break;
+
+  case 89: /* primary_expression: TOKEN_FLOAT_LITERAL  */
+#line 617 "src/parser.y"
+        {
+            (yyval.node) = create_float_node((yyvsp[0].fval));
+        }
+#line 2106 "parser.tab.cpp"
     break;
 
   case 90: /* primary_expression: TOKEN_STRING_LITERAL  */
-#line 389 "src/parser.y"
-                            { free((yyvsp[0].sval)); }
-#line 1566 "parser.tab.cpp"
+#line 621 "src/parser.y"
+        {
+            (yyval.node) = create_string_node((yyvsp[0].sval));
+            free((yyvsp[0].sval));
+        }
+#line 2115 "parser.tab.cpp"
     break;
 
   case 91: /* primary_expression: TOKEN_IDENTIFIER  */
-#line 390 "src/parser.y"
-                            { free((yyvsp[0].sval)); }
-#line 1572 "parser.tab.cpp"
+#line 626 "src/parser.y"
+        {
+            (yyval.node) = create_identifier_node((yyvsp[0].sval));
+            (yyval.node)->line_number = yylineno;
+            free((yyvsp[0].sval));
+        }
+#line 2125 "parser.tab.cpp"
+    break;
+
+  case 92: /* primary_expression: TOKEN_LPAREN expression TOKEN_RPAREN  */
+#line 632 "src/parser.y"
+        {
+            (yyval.node) = (yyvsp[-1].node);
+        }
+#line 2133 "parser.tab.cpp"
     break;
 
 
-#line 1576 "parser.tab.cpp"
+#line 2137 "parser.tab.cpp"
 
       default: break;
     }
@@ -1765,7 +2326,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 394 "src/parser.y"
+#line 637 "src/parser.y"
 
 
 /* ======================== Error handling ======================== */
@@ -1790,7 +2351,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Open output file if specified
     if (argc >= 3) {
         output_file = fopen(argv[2], "w");
         if (!output_file) {
@@ -1799,12 +2359,10 @@ int main(int argc, char* argv[]) {
     }
 
     yyin = file;
-
     std::cout << "Parsing '" << argv[1] << "'...\n" << std::endl;
-
     int result = yyparse();
-
     fclose(file);
+    
     if (output_file) {
         fclose(output_file);
         if (result == 0 && error_count == 0) {
@@ -1816,8 +2374,49 @@ int main(int argc, char* argv[]) {
 
     if (result == 0 && error_count == 0) {
         std::cout << "Parsing completed successfully. No errors found.\n";
+        
+        if (root_ast) {
+            SemanticResult* sem_result = create_semantic_result();
+            semantic_analyze(root_ast, &sym_table, sem_result);
+            
+            if (sem_result->error_count > 0) {
+                std::cerr << "Semantic analysis failed with " << sem_result->error_count 
+                         << " error(s) and " << sem_result->warning_count << " warning(s).\n";
+                free(sem_result);
+                free_ast(root_ast);
+                return 1;
+            }
+            
+            if (sem_result->warning_count > 0) {
+                std::cout << "Semantic analysis completed with " << sem_result->warning_count 
+                         << " warning(s).\n";
+            }
+            free(sem_result);
+            
+            IRList* ir = generate_ir_from_ast(root_ast, &sym_table);
+            if (ir) {
+                int opt_changes = optimize_ir(ir);
+                if (opt_changes > 0) {
+                    std::cout << "Optimizations applied: " << opt_changes << " changes\n";
+                }
+                
+                if (argc >= 4) {
+                    FILE* asm_file = fopen(argv[3], "w");
+                    if (asm_file) {
+                        generate_assembly(ir, asm_file);
+                        fclose(asm_file);
+                        std::cout << "Assembly code written to '" << argv[3] << "'\n";
+                    }
+                }
+                free_ir_list(ir);
+            }
+            free_ast(root_ast);
+        }
     } else {
         std::cerr << "Parsing finished with " << error_count << " error(s).\n";
+        if (root_ast) {
+            free_ast(root_ast);
+        }
     }
 
     return (result == 0 && error_count == 0) ? 0 : 1;

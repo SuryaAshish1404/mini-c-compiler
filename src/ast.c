@@ -54,7 +54,7 @@ ASTNode* create_float_node(double value) {
 ASTNode* create_string_node(const char *value) {
     ASTNode *node = create_node(AST_STRING);
     strncpy(node->string_value, value, sizeof(node->string_value) - 1);
-    return node;
+    return node; 
 }
 
 ASTNode* create_tensor_decl_node(const char *name, int *shape, int dims) {

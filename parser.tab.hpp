@@ -45,11 +45,12 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 98 "src/parser.y"
+#line 107 "src/parser.y"
 
     #include <vector>
+    struct ASTNode;
 
-#line 53 "parser.tab.hpp"
+#line 54 "parser.tab.hpp"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -117,14 +118,15 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 102 "src/parser.y"
+#line 112 "src/parser.y"
 
     int    ival;
     double fval;
     char*  sval;
     std::vector<int>* dim_list;
+    ASTNode* node;
 
-#line 128 "parser.tab.hpp"
+#line 130 "parser.tab.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;
