@@ -12,7 +12,6 @@ void report_lexical_error(const char* text, int line);
 %option noyywrap
 %option yylineno
 
-/* ======================== Definitions ======================== */
 
 DIGIT       [0-9]
 LETTER      [a-zA-Z_]
@@ -25,13 +24,9 @@ NEWLINE     \n
 
 %%
 
- /* ======================== Rules ======================== */
+"//".*                  { }
+"/*"([^*]|\*+[^*/])*\*+"/"  { }
 
- /* ---------- Comments ---------- */
-"//".*                  { /* single-line comment: skip */ }
-"/*"([^*]|\*+[^*/])*\*+"/"  { /* multi-line comment: skip */ }
-
- /* ---------- Keywords ---------- */
 "int"       { return TOKEN_INT;    }
 "float"     { return TOKEN_FLOAT;  }
 "char"      { return TOKEN_CHAR;   }
@@ -47,7 +42,6 @@ NEWLINE     \n
 "break"     { return TOKEN_BREAK;  }
 "default"   { return TOKEN_DEFAULT; }
 
- /* ---------- Operators (multi-char before single-char) ---------- */
 "++"        { return TOKEN_INCREMENT;    }
 "--"        { return TOKEN_DECREMENT;    }
 "+="        { return TOKEN_PLUS_ASSIGN;  }
@@ -70,7 +64,6 @@ NEWLINE     \n
 ">"         { return TOKEN_GT;           }
 "!"         { return TOKEN_NOT;          }
 
- /* ---------- Delimiters ---------- */
 "("         { return TOKEN_LPAREN;    }
 ")"         { return TOKEN_RPAREN;    }
 "{"         { return TOKEN_LBRACE;    }
@@ -81,7 +74,6 @@ NEWLINE     \n
 ","         { return TOKEN_COMMA;     }
 ":"         { return TOKEN_COLON;     }
 
- /* ---------- Literals ---------- */
 {FLOAT_LIT} {
     yylval.fval = atof(yytext);
     return TOKEN_FLOAT_LITERAL;
@@ -97,24 +89,19 @@ NEWLINE     \n
     return TOKEN_STRING_LITERAL;
 }
 
- /* ---------- Identifiers ---------- */
 {ID} {
     yylval.sval = strdup(yytext);
     return TOKEN_IDENTIFIER;
 }
 
- /* ---------- Whitespace ---------- */
-{WHITESPACE}  { /* skip */ }
-{NEWLINE}     { /* skip; yylineno updated automatically */ }
+{WHITESPACE}  { }
+{NEWLINE}     { }
 
- /* ---------- Catch-all for unrecognized characters ---------- */
 . {
     report_lexical_error(yytext, yylineno);
 }
 
 %%
-
-/* ======================== User Code ======================== */
 
 void report_lexical_error(const char* text, int line) {
     std::cerr << "Lexical Error (line " << line

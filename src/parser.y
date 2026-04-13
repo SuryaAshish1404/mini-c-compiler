@@ -72,7 +72,6 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
         loop_vars.push_back("i" + std::to_string(i));
     }
     
-    // generate nested loops
     for (int i = 0; i < tensor->num_dimensions; i++) {
         for (int j = 0; j < i; j++) fprintf(output_file, "    ");
         fprintf(output_file, "for(int %s=0; %s<%d; %s++) {\n", 
@@ -80,7 +79,6 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
                 tensor->shape[i], loop_vars[i].c_str());
     }
     
-    // generate array access
     for (int i = 0; i < tensor->num_dimensions; i++) fprintf(output_file, "    ");
     fprintf(output_file, "%s", dest.c_str());
     for (const auto& var : loop_vars) {
@@ -96,7 +94,6 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
     }
     fprintf(output_file, ";\n");
     
-    // close loops
     for (int i = tensor->num_dimensions - 1; i >= 0; i--) {
         for (int j = 0; j < i; j++) fprintf(output_file, "    ");
         fprintf(output_file, "}\n");
@@ -117,19 +114,14 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
     ASTNode* node;
 }
 
-/* ---------- Token declarations ---------- */
-
-/* Keywords */
 %token TOKEN_INT TOKEN_FLOAT TOKEN_CHAR TOKEN_VOID TOKEN_TENSOR
 %token TOKEN_IF TOKEN_ELSE TOKEN_WHILE TOKEN_FOR TOKEN_RETURN
 %token TOKEN_SWITCH TOKEN_CASE TOKEN_BREAK TOKEN_DEFAULT
 
-/* Literals */
 %token <ival> TOKEN_INT_LITERAL
 %token <fval> TOKEN_FLOAT_LITERAL
 %token <sval> TOKEN_IDENTIFIER TOKEN_STRING_LITERAL
 
-/* Operators */
 %token TOKEN_PLUS TOKEN_MINUS TOKEN_STAR TOKEN_SLASH TOKEN_PERCENT
 %token TOKEN_ASSIGN
 %token TOKEN_EQ TOKEN_NEQ TOKEN_LT TOKEN_GT TOKEN_LEQ TOKEN_GEQ
@@ -138,13 +130,11 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
 %token TOKEN_PLUS_ASSIGN TOKEN_MINUS_ASSIGN
 %token TOKEN_STAR_ASSIGN TOKEN_SLASH_ASSIGN
 
-/* Delimiters */
 %token TOKEN_LPAREN TOKEN_RPAREN
 %token TOKEN_LBRACE TOKEN_RBRACE
 %token TOKEN_LBRACKET TOKEN_RBRACKET
 %token TOKEN_SEMICOLON TOKEN_COMMA TOKEN_COLON
 
-/* ---------- Operator precedence & associativity (low to high) ---------- */
 %right TOKEN_ASSIGN TOKEN_PLUS_ASSIGN TOKEN_MINUS_ASSIGN TOKEN_STAR_ASSIGN TOKEN_SLASH_ASSIGN
 %left  TOKEN_OR
 %left  TOKEN_AND
@@ -155,7 +145,6 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
 %right TOKEN_NOT UMINUS
 %left  TOKEN_INCREMENT TOKEN_DECREMENT
 
-/* ---------- Non-terminal types ---------- */
 %type <sval> type_specifier
 %type <dim_list> dimension_list
 %type <node> program declaration_list declaration
@@ -171,12 +160,10 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
 %type <node> argument_list parameter_list parameter
 %type <node> case_list case_clause
 
-/* Start symbol */
 %start program
 
 %%
 
-/* ======================== Grammar Rules ======================== */
 
 program
     : declaration_list
@@ -206,7 +193,6 @@ declaration
     | tensor_declaration { $$ = $1; }
     ;
 
-/* ---------- Type specifiers ---------- */
 type_specifier
     : TOKEN_INT   { $$ = strdup("int");   }
     | TOKEN_FLOAT { $$ = strdup("float"); }
@@ -214,7 +200,6 @@ type_specifier
     | TOKEN_VOID  { $$ = strdup("void");  }
     ;
 
-/* ---------- Variable declarations ---------- */
 variable_declaration
     : type_specifier TOKEN_IDENTIFIER TOKEN_SEMICOLON
         {
@@ -232,7 +217,6 @@ variable_declaration
         }
     ;
 
-/* ---------- Tensor declarations ---------- */
 tensor_declaration
     : TOKEN_TENSOR TOKEN_IDENTIFIER dimension_list TOKEN_SEMICOLON
         {
@@ -294,7 +278,6 @@ parameter
         }
     ;
 
-/* ---------- Statements ---------- */
 compound_statement
     : TOKEN_LBRACE { sym_table.enter_scope(); }
       statement_list
@@ -348,7 +331,6 @@ expression_statement
         }
     ;
 
-/* ---------- Control flow ---------- */
 selection_statement
     : TOKEN_IF TOKEN_LPAREN expression TOKEN_RPAREN statement
         {
@@ -430,7 +412,6 @@ break_statement
         }
     ;
 
-/* ---------- Expressions ---------- */
 expression
     : assignment_expression { $$ = $1; }
     ;
