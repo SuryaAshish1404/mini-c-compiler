@@ -36,8 +36,12 @@ void generate_decl_ir(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
             break;
             
         case AST_FUNCTION_DECL:
+            fprintf(stderr, "[DEBUG] Processing function: %s, body=%p\n", node->name, (void*)node->body);
             if (node->body) {
+                fprintf(stderr, "[DEBUG] Function body type: %d\n", node->body->type);
                 gen_stmt(ir_list, node->body, sym_table);
+            } else {
+                fprintf(stderr, "[DEBUG] Function has no body!\n");
             }
             break;
             
@@ -156,11 +160,21 @@ static char* gen_expr(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
 
 static void gen_stmt(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
     if (!node) return;
+    fprintf(stderr, "[DEBUG gen_stmt] Node type: %d\n", node->type);
     switch (node->type) {
         case AST_COMPOUND_STMT:
+            fprintf(stderr, "[DEBUG] COMPOUND_STMT, body=%p\n", (void*)node->body);
+            if (node->body) {
+                fprintf(stderr, "[DEBUG] Processing compound body, type=%d\n", node->body->type);
+                gen_stmt(ir_list, node->body, sym_table);
+            }
+            break;
         case AST_STATEMENT_LIST:
-            for (int i = 0; node->children && i < node->num_children; i++)
+            fprintf(stderr, "[DEBUG] STATEMENT_LIST, num_children=%d\n", node->num_children);
+            for (int i = 0; node->children && i < node->num_children; i++) {
+                fprintf(stderr, "[DEBUG] Processing statement %d, type=%d\n", i, node->children[i]->type);
                 gen_stmt(ir_list, node->children[i], sym_table);
+            }
             break;
         case AST_EXPR_STMT:
             if (node->left) {
@@ -310,11 +324,25 @@ IRList* generate_ir_from_ast(ASTNode *ast, SymbolTable *sym_table) {
     if (!ast) return NULL;
     IRList *ir_list = create_ir_list();
     reset_temp_counter();
+    fprintf(stderr, "[DEBUG] AST root type: %d, num_children: %d\n", ast->type, ast->num_children);
     if (ast->type == AST_PROGRAM || ast->type == AST_DECLARATION_LIST) {
         for (int i = 0; ast->children && i < ast->num_children; i++) {
+            fprintf(stderr, "[DEBUG] Child %d type: %d\n", i, ast->children[i]->type);
             if (ast->children[i]->type == AST_FUNCTION_DECL || 
-                ast->children[i]->type == AST_VARIABLE_DECL)
+                ast->children[i]->type == AST_VARIABLE_DECL ||
+                ast->children[i]->type == AST_TENSOR_DECL) {
                 generate_decl_ir(ir_list, ast->children[i], sym_table);
+            } else if (ast->children[i]->type == AST_DECLARATION_LIST) {
+                // Recursively process nested declaration lists
+                for (int j = 0; ast->children[i]->children && j < ast->children[i]->num_children; j++) {
+                    fprintf(stderr, "[DEBUG] Nested child %d type: %d\n", j, ast->children[i]->children[j]->type);
+                    if (ast->children[i]->children[j]->type == AST_FUNCTION_DECL || 
+                        ast->children[i]->children[j]->type == AST_VARIABLE_DECL ||
+                        ast->children[i]->children[j]->type == AST_TENSOR_DECL) {
+                        generate_decl_ir(ir_list, ast->children[i]->children[j], sym_table);
+                    }
+                }
+            }
         }
     } else {
         if (ast->type == AST_FUNCTION_DECL || ast->type == AST_VARIABLE_DECL)
@@ -322,6 +350,7 @@ IRList* generate_ir_from_ast(ASTNode *ast, SymbolTable *sym_table) {
         else
             gen_stmt(ir_list, ast, sym_table);
     }
+    fprintf(stderr, "[DEBUG] Final IR count: %d\n", ir_list->count);
     return ir_list;
 }
 

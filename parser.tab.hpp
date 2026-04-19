@@ -45,7 +45,7 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 104 "src/parser.y"
+#line 129 "src/parser.y"
 
     #include <vector>
     struct ASTNode;
@@ -118,7 +118,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 109 "src/parser.y"
+#line 134 "src/parser.y"
 
     int    ival;
     double fval;

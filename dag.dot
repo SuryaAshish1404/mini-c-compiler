@@ -1,0 +1,13 @@
+digraph DAG {
+    node [shape=box fontname="Courier" fontsize=10];
+    rankdir=TB;
+
+    N0 [label="#0 Program" style=filled fillcolor=lightblue];
+    N1 [label="#1 DeclList"];
+    N2 [label="#2 Compound"];
+    N3 [label="#3 FuncDecl\n'main'"];
+
+    N0 -> N1 [label="[0]"];
+    N1 -> N3 [label="[0]"];
+    N3 -> N2 [label="body"];
+}

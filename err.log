@@ -1,0 +1,15 @@
+[DEBUG] AST root type: 0, num_children: 1
+[DEBUG] Child 0 type: 25
+[DEBUG] Nested child 0 type: 4
+[DEBUG] Nested child 1 type: 4
+[DEBUG] Nested child 2 type: 4
+[DEBUG] Nested child 3 type: 3
+[DEBUG] Processing function: main, body=000001e090a2ae30
+[DEBUG] Function body type: 12
+[DEBUG gen_stmt] Node type: 12
+[DEBUG] COMPOUND_STMT, body=000001e090a2a800
+[DEBUG] Processing compound body, type=26
+[DEBUG gen_stmt] Node type: 26
+[DEBUG] STATEMENT_LIST, num_children=2
+[DEBUG] Processing statement 0, type=17
+[DEBUG gen_stmt] Node type: 17

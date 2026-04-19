@@ -13,6 +13,8 @@ extern "C" {
 #include "semantic.h"
 #include "codegen.h"
 #include "optimizer.h"
+#include "cfg.h"
+#include "dag.h"
 }
 
 extern int yylex();
@@ -98,6 +100,29 @@ void generate_tensor_operation(const std::string& dest, const std::string& lhs,
         for (int j = 0; j < i; j++) fprintf(output_file, "    ");
         fprintf(output_file, "}\n");
     }
+}
+
+bool are_both_tensors(ASTNode* left, ASTNode* right) {
+    if (!left || !right) return false;
+    if (left->type != AST_IDENTIFIER || right->type != AST_IDENTIFIER) return false;
+    
+    SymbolEntry* left_entry = sym_table.lookup(left->name);
+    SymbolEntry* right_entry = sym_table.lookup(right->name);
+    
+    if (!left_entry || !right_entry) return false;
+    return left_entry->is_tensor && right_entry->is_tensor;
+}
+
+ASTNode* create_tensor_or_scalar_op(ASTNode* left, ASTNode* right, 
+                                     ASTNodeType tensor_type, OperatorType scalar_op) {
+    if (are_both_tensors(left, right)) {
+        if (check_tensor_compatibility(left->name, right->name, 
+                                       tensor_type == AST_TENSOR_ADD ? "+" : 
+                                       tensor_type == AST_TENSOR_SUB ? "-" : "*")) {
+            return create_tensor_op_node(tensor_type, left, right);
+        }
+    }
+    return create_binary_node(AST_BINARY_OP, scalar_op, left, right);
 }
 %}
 
@@ -505,11 +530,11 @@ relational_expression
 additive_expression
     : additive_expression TOKEN_PLUS multiplicative_expression
         {
-            $$ = create_binary_node(AST_BINARY_OP, OP_ADD, $1, $3);
+            $$ = create_tensor_or_scalar_op($1, $3, AST_TENSOR_ADD, OP_ADD);
         }
     | additive_expression TOKEN_MINUS multiplicative_expression
         {
-            $$ = create_binary_node(AST_BINARY_OP, OP_SUB, $1, $3);
+            $$ = create_tensor_or_scalar_op($1, $3, AST_TENSOR_SUB, OP_SUB);
         }
     | multiplicative_expression { $$ = $1; }
     ;
@@ -517,7 +542,7 @@ additive_expression
 multiplicative_expression
     : multiplicative_expression TOKEN_STAR unary_expression
         {
-            $$ = create_binary_node(AST_BINARY_OP, OP_MUL, $1, $3);
+            $$ = create_tensor_or_scalar_op($1, $3, AST_TENSOR_MUL, OP_MUL);
         }
     | multiplicative_expression TOKEN_SLASH unary_expression
         {
@@ -680,14 +705,45 @@ int main(int argc, char* argv[]) {
                          << " warning(s).\n";
             }
             free(sem_result);
-            
+
+            /* ── DAG: deduplicate AST nodes, constant-fold, prune dead subtrees ── */
+            DAG* dag = build_dag(root_ast);
+            if (dag) {
+                print_dag(dag);
+                FILE* dag_dot = fopen("dag.dot", "w");
+                if (dag_dot) {
+                    print_dag_dot(dag, dag_dot);
+                    fclose(dag_dot);
+                    std::cout << "DAG written to 'dag.dot' (render with: dot -Tpng dag.dot -o dag.png)\n";
+                }
+                free_dag(dag);
+            }
+
             IRList* ir = generate_ir_from_ast(root_ast, &sym_table);
             if (ir) {
+                std::cout << "IR generated: " << ir->count << " instructions\n";
                 int opt_changes = optimize_ir(ir);
                 if (opt_changes > 0) {
                     std::cout << "Optimizations applied: " << opt_changes << " changes\n";
                 }
                 
+                /* ── CFG: basic blocks, dominator tree, loop detection ── */
+                CFG* cfg = build_cfg(ir);
+                if (cfg) {
+                    print_cfg(cfg);
+                    print_dominator_tree(cfg);
+                    print_loops(cfg);
+
+                    /* optional: emit Graphviz DOT file */
+                    FILE* dot_file = fopen("cfg.dot", "w");
+                    if (dot_file) {
+                        print_cfg_dot(cfg, dot_file);
+                        fclose(dot_file);
+                        std::cout << "CFG written to 'cfg.dot' (render with: dot -Tpng cfg.dot -o cfg.png)\n";
+                    }
+                    free_cfg(cfg);
+                }
+
                 if (argc >= 4) {
                     FILE* asm_file = fopen(argv[3], "w");
                     if (asm_file) {
@@ -697,6 +753,8 @@ int main(int argc, char* argv[]) {
                     }
                 }
                 free_ir_list(ir);
+            } else {
+                std::cout << "No IR generated\n";
             }
             free_ast(root_ast);
         }

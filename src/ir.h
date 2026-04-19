@@ -36,7 +36,8 @@ typedef enum {
     IR_AND,
     IR_OR,
     IR_NOT,
-    IR_NEG
+    IR_NEG,
+    IR_ALLOC   /* result = alloc(arg1 bytes) — lowered to runtime heap call */
 } IROpcode;
 
 typedef struct IR {
@@ -74,6 +75,7 @@ IR* create_ir_for_begin(const char *var, const char *start, const char *end);
 IR* create_ir_for_end();
 IR* create_ir_call(const char *result, const char *func_name, int num_args);
 IR* create_ir_return(const char *value);
+IR* create_ir_alloc(const char *result, const char *size_operand);
 
 
 void print_ir(IR *instruction);

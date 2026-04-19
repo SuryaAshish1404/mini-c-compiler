@@ -67,15 +67,33 @@ codegen.o: $(SRC_DIR)/codegen.c $(SRC_DIR)/codegen.h
 optimizer.o: $(SRC_DIR)/optimizer.c $(SRC_DIR)/optimizer.h
 	$(CC) $(CFLAGS) -c $(SRC_DIR)/optimizer.c
 
+cfg.o: $(SRC_DIR)/cfg.c $(SRC_DIR)/cfg.h
+	$(CC) $(CFLAGS) -c $(SRC_DIR)/cfg.c
+
+dag.o: $(SRC_DIR)/dag.c $(SRC_DIR)/dag.h
+	$(CC) $(CFLAGS) -c $(SRC_DIR)/dag.c
+
+heap_alloc.o: $(SRC_DIR)/heap_alloc.c $(SRC_DIR)/heap_alloc.h
+	$(CC) $(CFLAGS) -c $(SRC_DIR)/heap_alloc.c
+
+stack_frame.o: $(SRC_DIR)/stack_frame.c $(SRC_DIR)/stack_frame.h
+	$(CC) $(CFLAGS) -c $(SRC_DIR)/stack_frame.c
+
+regalloc.o: $(SRC_DIR)/regalloc.c $(SRC_DIR)/regalloc.h
+	$(CC) $(CFLAGS) -c $(SRC_DIR)/regalloc.c
+
+OBJS = ast.o ir.o temp_var.o tensor_ir.o ir_gen.o semantic.o codegen.o \
+       optimizer.o cfg.o dag.o heap_alloc.o stack_frame.o regalloc.o
+
 # Link everything
-$(TARGET): $(FLEX_SRC) $(BISON_SRC) $(SRC_DIR)/symbol_table.cpp ast.o ir.o temp_var.o tensor_ir.o ir_gen.o semantic.o codegen.o optimizer.o
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(BISON_SRC) $(FLEX_SRC) $(SRC_DIR)/symbol_table.cpp ast.o ir.o temp_var.o tensor_ir.o ir_gen.o semantic.o codegen.o optimizer.o
+$(TARGET): $(FLEX_SRC) $(BISON_SRC) $(SRC_DIR)/symbol_table.cpp $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(BISON_SRC) $(FLEX_SRC) $(SRC_DIR)/symbol_table.cpp $(OBJS)
 
 $(LEXER_BIN): $(FLEX_SRC) $(BISON_HDR) $(LEXER_DRV)
 	$(CXX) $(CXXFLAGS) -o $(LEXER_BIN) $(LEXER_DRV) $(FLEX_SRC)
 
-$(DEMO_BIN): $(DEMO_SRC) ast.o ir.o temp_var.o tensor_ir.o ir_gen.o semantic.o codegen.o optimizer.o $(SRC_DIR)/symbol_table.cpp
-	$(CXX) $(CXXFLAGS) -o $(DEMO_BIN) $(DEMO_SRC) ast.o ir.o temp_var.o tensor_ir.o ir_gen.o semantic.o codegen.o optimizer.o $(SRC_DIR)/symbol_table.cpp
+$(DEMO_BIN): $(DEMO_SRC) $(OBJS) $(SRC_DIR)/symbol_table.cpp
+	$(CXX) $(CXXFLAGS) -o $(DEMO_BIN) $(DEMO_SRC) $(OBJS) $(SRC_DIR)/symbol_table.cpp
 
 # ============================================================
 # Utility targets

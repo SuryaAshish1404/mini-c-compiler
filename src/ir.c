@@ -171,6 +171,14 @@ IR* create_ir_return(const char *value) {
     return ir;
 }
 
+IR* create_ir_alloc(const char *result, const char *size_operand) {
+    IR *ir = create_ir(IR_ALLOC);
+    strcpy(ir->op, "ALLOC");
+    strncpy(ir->result, result,       sizeof(ir->result) - 1);
+    strncpy(ir->arg1,   size_operand, sizeof(ir->arg1)   - 1);
+    return ir;
+}
+
 const char* ir_opcode_to_string(IROpcode opcode) {
     switch (opcode) {
         case IR_ASSIGN: return "ASSIGN";
@@ -199,7 +207,8 @@ const char* ir_opcode_to_string(IROpcode opcode) {
         case IR_AND: return "AND";
         case IR_OR: return "OR";
         case IR_NOT: return "NOT";
-        case IR_NEG: return "NEG";
+        case IR_NEG:   return "NEG";
+        case IR_ALLOC: return "ALLOC";
         default: return "UNKNOWN";
     }
 }

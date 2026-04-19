@@ -18,6 +18,9 @@ int types_compatible(const char* type1, const char* type2) {
         (strcmp(type1, "float") == 0 && strcmp(type2, "int") == 0)) {
         return 1;
     }
+    if (strcmp(type1, "tensor") == 0 && strcmp(type2, "tensor") == 0) {
+        return 1;
+    }
     return 0;
 }
 
@@ -46,6 +49,10 @@ const char* get_expr_type(ASTNode* node, SymbolTable* sym_table, SemanticResult*
             }
             return "int";
         }
+        case AST_TENSOR_ADD:
+        case AST_TENSOR_SUB:
+        case AST_TENSOR_MUL:
+            return "tensor";
         case AST_UNARY_OP:
             return get_expr_type(node->left, sym_table, result);
         case AST_ASSIGNMENT:
@@ -90,6 +97,51 @@ void check_binary_op(ASTNode* node, SymbolTable* sym_table, SemanticResult* resu
     }
 }
 
+void check_tensor_op(ASTNode* node, SymbolTable* sym_table, SemanticResult* result) {
+    if (!node || !node->left || !node->right) return;
+    
+    if (node->left->type != AST_IDENTIFIER || node->right->type != AST_IDENTIFIER) {
+        fprintf(stderr, "Semantic Error (line %d): tensor operations require tensor identifiers\n",
+                node->line_number);
+        result->error_count++;
+        return;
+    }
+    
+    SymbolEntry* left_entry = sym_table->lookup(node->left->name);
+    SymbolEntry* right_entry = sym_table->lookup(node->right->name);
+    
+    if (!left_entry || !right_entry) {
+        fprintf(stderr, "Semantic Error (line %d): undefined tensor in operation\n",
+                node->line_number);
+        result->error_count++;
+        return;
+    }
+    
+    if (!left_entry->is_tensor || !right_entry->is_tensor) {
+        fprintf(stderr, "Semantic Error (line %d): tensor operation requires both operands to be tensors\n",
+                node->line_number);
+        result->error_count++;
+        return;
+    }
+    
+    if (left_entry->num_dimensions != right_entry->num_dimensions) {
+        fprintf(stderr, "Semantic Error (line %d): tensor dimension mismatch: %s has %d dimensions, %s has %d dimensions\n",
+                node->line_number, node->left->name, left_entry->num_dimensions,
+                node->right->name, right_entry->num_dimensions);
+        result->error_count++;
+        return;
+    }
+    
+    for (int i = 0; i < left_entry->num_dimensions; i++) {
+        if (left_entry->shape[i] != right_entry->shape[i]) {
+            fprintf(stderr, "Semantic Error (line %d): tensor shape mismatch: %s and %s have incompatible shapes\n",
+                    node->line_number, node->left->name, node->right->name);
+            result->error_count++;
+            return;
+        }
+    }
+}
+
 void check_function_call(ASTNode* node, SymbolTable* sym_table, SemanticResult* result) {
     if (!node) return;
     
@@ -112,6 +164,13 @@ void check_types(ASTNode* node, SymbolTable* sym_table, SemanticResult* result) 
             break;
         case AST_BINARY_OP:
             check_binary_op(node, sym_table, result);
+            check_types(node->left, sym_table, result);
+            check_types(node->right, sym_table, result);
+            break;
+        case AST_TENSOR_ADD:
+        case AST_TENSOR_SUB:
+        case AST_TENSOR_MUL:
+            check_tensor_op(node, sym_table, result);
             check_types(node->left, sym_table, result);
             check_types(node->right, sym_table, result);
             break;
