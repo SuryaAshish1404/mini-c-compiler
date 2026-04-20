@@ -687,74 +687,76 @@ int main(int argc, char* argv[]) {
 
     if (result == 0 && error_count == 0) {
         std::cout << "Parsing completed successfully. No errors found.\n";
-        
+
         if (root_ast) {
             SemanticResult* sem_result = create_semantic_result();
             semantic_analyze(root_ast, &sym_table, sem_result);
-            
+
             if (sem_result->error_count > 0) {
-                std::cerr << "Semantic analysis failed with " << sem_result->error_count 
+                std::cerr << "Semantic analysis failed with " << sem_result->error_count
                          << " error(s) and " << sem_result->warning_count << " warning(s).\n";
                 free(sem_result);
                 free_ast(root_ast);
                 return 1;
             }
-            
+
             if (sem_result->warning_count > 0) {
-                std::cout << "Semantic analysis completed with " << sem_result->warning_count 
+                std::cout << "Semantic analysis completed with " << sem_result->warning_count
                          << " warning(s).\n";
             }
             free(sem_result);
 
-            /* ── DAG: deduplicate AST nodes, constant-fold, prune dead subtrees ── */
-            DAG* dag = build_dag(root_ast);
-            if (dag) {
-                print_dag(dag);
-                FILE* dag_dot = fopen("dag.dot", "w");
-                if (dag_dot) {
-                    print_dag_dot(dag, dag_dot);
-                    fclose(dag_dot);
-                    std::cout << "DAG written to 'dag.dot' (render with: dot -Tpng dag.dot -o dag.png)\n";
-                }
-                free_dag(dag);
-            }
+            if (argc >= 4) {
+                /* Full compilation pipeline: generate IR, CFG, DAG, and assembly */
 
-            IRList* ir = generate_ir_from_ast(root_ast, &sym_table);
-            if (ir) {
-                std::cout << "IR generated: " << ir->count << " instructions\n";
-                int opt_changes = optimize_ir(ir);
-                if (opt_changes > 0) {
-                    std::cout << "Optimizations applied: " << opt_changes << " changes\n";
-                }
-                
-                /* ── CFG: basic blocks, dominator tree, loop detection ── */
-                CFG* cfg = build_cfg(ir);
-                if (cfg) {
-                    print_cfg(cfg);
-                    print_dominator_tree(cfg);
-                    print_loops(cfg);
-
-                    /* optional: emit Graphviz DOT file */
-                    FILE* dot_file = fopen("cfg.dot", "w");
-                    if (dot_file) {
-                        print_cfg_dot(cfg, dot_file);
-                        fclose(dot_file);
-                        std::cout << "CFG written to 'cfg.dot' (render with: dot -Tpng cfg.dot -o cfg.png)\n";
+                /* ── DAG: deduplicate AST nodes, constant-fold, prune dead subtrees ── */
+                DAG* dag = build_dag(root_ast);
+                if (dag) {
+                    print_dag(dag);
+                    FILE* dag_dot = fopen("dag.dot", "w");
+                    if (dag_dot) {
+                        print_dag_dot(dag, dag_dot);
+                        fclose(dag_dot);
+                        std::cout << "DAG written to 'dag.dot' (render with: dot -Tpng dag.dot -o dag.png)\n";
                     }
-                    free_cfg(cfg);
+                    free_dag(dag);
                 }
 
-                if (argc >= 4) {
+                IRList* ir = generate_ir_from_ast(root_ast, &sym_table);
+                if (ir) {
+                    std::cout << "IR generated: " << ir->count << " instructions\n";
+                    int opt_changes = optimize_ir(ir);
+                    if (opt_changes > 0) {
+                        std::cout << "Optimizations applied: " << opt_changes << " changes\n";
+                    }
+
+                    /* ── CFG: basic blocks, dominator tree, loop detection ── */
+                    CFG* cfg = build_cfg(ir);
+                    if (cfg) {
+                        print_cfg(cfg);
+                        print_dominator_tree(cfg);
+                        print_loops(cfg);
+
+                        /* optional: emit Graphviz DOT file */
+                        FILE* dot_file = fopen("cfg.dot", "w");
+                        if (dot_file) {
+                            print_cfg_dot(cfg, dot_file);
+                            fclose(dot_file);
+                            std::cout << "CFG written to 'cfg.dot' (render with: dot -Tpng cfg.dot -o cfg.png)\n";
+                        }
+                        free_cfg(cfg);
+                    }
+
                     FILE* asm_file = fopen(argv[3], "w");
                     if (asm_file) {
                         generate_assembly(ir, asm_file);
                         fclose(asm_file);
                         std::cout << "Assembly code written to '" << argv[3] << "'\n";
                     }
+                    free_ir_list(ir);
+                } else {
+                    std::cout << "No IR generated\n";
                 }
-                free_ir_list(ir);
-            } else {
-                std::cout << "No IR generated\n";
             }
             free_ast(root_ast);
         }

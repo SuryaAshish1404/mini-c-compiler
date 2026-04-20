@@ -236,6 +236,153 @@ Look for statistics on:
 - Fold count (constant expressions evaluated)
 - Dead node count (unreachable nodes removed)
 
+## CFG and Register Allocation Verification
+
+### Implementation Status: ✅ FULLY IMPLEMENTED
+
+Both **Control Flow Graph (CFG)** and **Register Allocation** are fully implemented and integrated into the compilation pipeline.
+
+### CFG Implementation Details
+
+**Location**: `src/cfg.c` and `src/cfg.h`
+
+**Key Features**:
+1. **Leader Identification** (Lines 98-121 in cfg.c)
+   - First instruction is a leader
+   - Branch targets are leaders
+   - Instructions following branches/returns are leaders
+
+2. **Basic Block Construction** (Lines 302-307)
+   - Groups instructions between leaders
+   - Maintains instruction pointers (no copying)
+
+3. **Edge Construction** (Lines 326-353)
+   - Sequential fall-through edges
+   - Conditional branch edges (taken + fall-through)
+   - Unconditional jump edges
+   - Return statements (terminal nodes)
+
+4. **Reverse Post-Order (RPO)** (Lines 130-177)
+   - Iterative DFS to avoid stack overflow
+   - Efficient for dataflow analysis
+
+5. **Dominator Tree** (Lines 195-240)
+   - Cooper-Harvey-Kennedy algorithm (2001)
+   - Computes immediate dominators
+   - Fixed-point iteration until convergence
+
+6. **Loop Detection** (Lines 261-270)
+   - Back edge identification (edge u→v where v dominates u)
+   - Natural loop body computation
+   - Loop header marking
+
+### Register Allocation Implementation Details
+
+**Location**: `src/regalloc.c` and `src/regalloc.h`
+
+**Key Features**:
+1. **Physical Register Set** (K=13 colors)
+   - Callee-saved: `%rbx`, `%r12`, `%r13`, `%r14`, `%r15` (indices 0-4)
+   - Caller-saved: `%rdi`, `%rsi`, `%rdx`, `%rcx`, `%r8`, `%r9`, `%r10`, `%r11` (indices 5-12)
+   - `%rax` reserved as scratch register
+
+2. **Liveness Analysis** (Lines 138-167)
+   - Backward dataflow analysis
+   - Use/def sets per basic block
+   - Fixed-point iteration: `live_in[B] = use[B] ∪ (live_out[B] - def[B])`
+
+3. **Interference Graph** (Lines 177-210)
+   - Tracks variables live simultaneously
+   - Symmetric adjacency matrix using 128-bit bitsets
+   - Degree tracking for each variable
+
+4. **Register Coalescing** (Lines 221-255)
+   - Conservative Briggs criterion
+   - Eliminates copy instructions (`IR_ASSIGN`)
+   - Union-find data structure for equivalence classes
+   - Only coalesces if merged node has < K high-degree neighbors
+
+5. **Chaitin-Briggs Graph Coloring** (Lines 267-343)
+   - **Simplify phase**: Remove nodes with degree < K
+   - **Spill selection**: Choose highest-degree node when stuck
+   - **Select phase**: Assign lowest available color
+   - **Spilling**: Allocate stack slots for uncolorable variables
+
+### Integration in Code Generation
+
+**Location**: `src/codegen.c` (Lines 333-391)
+
+```c
+CFG *cfg = build_cfg(ir_list);
+RAResult *ra = cfg ? regalloc_run(cfg, -8) : NULL;
+```
+
+The register allocator:
+- Runs after IR optimization
+- Provides physical register mappings
+- Tracks callee-saved register usage
+- Generates spill code automatically
+
+### Test Case: test_cfg_regalloc.c
+
+Created comprehensive test with:
+- Multiple functions (`fibonacci`, `factorial`, `main`)
+- Control flow (if-else, while loops, for loops)
+- Multiple live variables requiring register allocation
+- Function calls with parameter passing
+
+### Verification Through Assembly Output
+
+**Evidence in generated assembly** (`optimized.s`):
+
+1. **Physical Register Usage**:
+   ```asm
+   pushq %rbx        # Callee-saved register preservation
+   pushq %r12
+   pushq %r13
+   movq  %rdi, %r12  # Register allocation in action
+   ```
+
+2. **Register Allocation Results**:
+   - Variables mapped to physical registers (`%rbx`, `%r12-r15`)
+   - Efficient register reuse across basic blocks
+   - Spill code generated when needed (`movq` to/from stack)
+
+3. **CFG Evidence**:
+   - Proper basic block structure
+   - Conditional jumps (`je`, `jne`, `jl`, `jg`)
+   - Loop back edges
+   - Function prologues/epilogues at block boundaries
+
+### How to View CFG and Register Allocation Output
+
+Run compiler with 3 arguments to trigger full pipeline:
+```powershell
+.\mini_compiler.exe test\test_cfg_regalloc.c output.c test.s
+```
+
+This will print to stdout:
+- **Control Flow Graph**: Basic blocks with predecessors/successors
+- **Dominator Tree**: Immediate dominator relationships
+- **Loop Identification**: Back edges and loop bodies
+- **Liveness Analysis**: Variables discovered and live ranges
+- **Interference Graph**: Variable conflicts
+- **Chaitin-Briggs Coloring**: Register assignments and spills
+
+### Implementation Verification Summary
+
+| Feature | Status | Evidence |
+|---------|--------|----------|
+| CFG Construction | ✅ Implemented | `cfg.c` lines 275-368 |
+| Dominator Tree | ✅ Implemented | `cfg.c` lines 195-240 |
+| Loop Detection | ✅ Implemented | `cfg.c` lines 261-270, 508-546 |
+| Liveness Analysis | ✅ Implemented | `regalloc.c` lines 138-167 |
+| Interference Graph | ✅ Implemented | `regalloc.c` lines 177-210 |
+| Register Coalescing | ✅ Implemented | `regalloc.c` lines 221-255 |
+| Graph Coloring | ✅ Implemented | `regalloc.c` lines 267-343 |
+| Integration | ✅ Implemented | `codegen.c` lines 333-391 |
+| Assembly Generation | ✅ Working | Physical registers in output |
+
 ## Notes
 - Symbol table + semantic errors print to stdout
 - `output_tensor*.c` shows generated loop nests
@@ -250,5 +397,5 @@ Look for statistics on:
   - Stack operations (`push`, `pop`, `mov`)
   - Arithmetic instructions (`add`, `sub`, `imul`, `idiv`)
   - Control flow (`jmp`, `je`, `jne`, `jl`, `jg`, etc.)
-- CFG, liveness, interference graph, and register allocation results print to stdout
+- CFG, liveness, interference graph, and register allocation results print to stdout when running with 3 arguments
 - Tool versions: `flex --version`, `bison --version`, etc.

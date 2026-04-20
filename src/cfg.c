@@ -280,7 +280,14 @@ CFG *build_cfg(IRList *ir_list) {
     IR **instr = (IR **)malloc(n * sizeof(IR *));
     {
         IR *cur = ir_list->head;
-        for (int i = 0; i < n; i++, cur = cur->next) instr[i] = cur;
+        for (int i = 0; i < n; i++) {
+            if (!cur) {
+                free(instr);
+                return NULL;
+            }
+            instr[i] = cur;
+            cur = cur->next;
+        }
     }
 
     /* ── Step 1: leaders ── */
@@ -299,11 +306,14 @@ CFG *build_cfg(IRList *ir_list) {
     /* instr_to_block[i] = id of block containing instruction i */
     int *instr_to_block = (int *)malloc(n * sizeof(int));
 
-    BasicBlock *cur_bb = NULL;
+    int cur_bb_id = -1;
     for (int i = 0; i < n; i++) {
-        if (leader[i]) cur_bb = cfg_new_block(cfg);
-        instr_to_block[i] = cur_bb ? cur_bb->id : -1;
-        if (cur_bb) bb_push_instr(cur_bb, instr[i]);
+        if (leader[i]) {
+            BasicBlock *bb = cfg_new_block(cfg);
+            cur_bb_id = bb->id;
+        }
+        instr_to_block[i] = cur_bb_id;
+        if (cur_bb_id >= 0) bb_push_instr(&cfg->blocks[cur_bb_id], instr[i]);
     }
 
     /* ── Build label_num → block_id map ── */

@@ -252,6 +252,16 @@ int lower_alloc_calls(IRList *ir_list) {
                     while (pp && pp->next != prev) pp = pp->next;
                     if (pp) pp->next = cur;
                 }
+                /* Update tail if we just removed it */
+                if (prev == ir_list->tail) {
+                    ir_list->tail = (prev == ir_list->head) ? cur : NULL;
+                    /* Rebuild tail if needed */
+                    if (!ir_list->tail && ir_list->head) {
+                        IR *t = ir_list->head;
+                        while (t && t->next) t = t->next;
+                        ir_list->tail = t;
+                    }
+                }
                 free(prev);
                 ir_list->count--;
                 prev = cur;

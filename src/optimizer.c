@@ -142,6 +142,7 @@ int optimize_dead_code_elimination(IRList* ir_list) {
                 ir_list->tail = prev;
             }
             free(current);
+            ir_list->count--;
             changes++;
             current = next;
         } else {

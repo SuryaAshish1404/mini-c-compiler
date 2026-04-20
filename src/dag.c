@@ -600,7 +600,7 @@ static void print_edge(const char *label, int child_id, DAG *dag) {
     DAGNode *c = &dag->pool[child_id];
     char val[64];
     node_value_str(c, val, sizeof(val));
-    printf("│  %-8s → #%-4d [%s %s]%s\n",
+    printf("  %-8s -> #%-4d [%s %s]%s\n",
            label, child_id, node_label(c->type), val,
            c->is_dead ? " DEAD" : "");
 }
@@ -611,13 +611,12 @@ static void print_edge(const char *label, int child_id, DAG *dag) {
 void print_dag_stats(DAG *dag) {
     if (!dag) return;
     int live = dag->count - dag->dead_count;
-    printf("\n┌─ DAG statistics ───────────────────────────────────────────┐\n");
-    printf("│  Total nodes in pool : %-6d                              │\n", dag->count);
-    printf("│  Live nodes          : %-6d                              │\n", live);
-    printf("│  Dead nodes (pruned) : %-6d  (zero in-degree, not root)  │\n", dag->dead_count);
-    printf("│  Constant folds      : %-6d                              │\n", dag->fold_count);
-    printf("│  Dedup hits (shared) : %-6d                              │\n", dag->dedup_count);
-    printf("└────────────────────────────────────────────────────────────┘\n");
+    printf("\n[DAG statistics]\n");
+    printf("  Total nodes in pool : %d\n", dag->count);
+    printf("  Live nodes          : %d\n", live);
+    printf("  Dead nodes (pruned) : %d  (zero in-degree, not root)\n", dag->dead_count);
+    printf("  Constant folds      : %d\n", dag->fold_count);
+    printf("  Dedup hits (shared) : %d\n", dag->dedup_count);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -626,9 +625,7 @@ void print_dag_stats(DAG *dag) {
 void print_dag(DAG *dag) {
     if (!dag) return;
 
-    printf("\n╔══════════════════════════════════════════════════════════════╗\n");
-    printf("║           AST → DAG  (value-number + constant folding)       ║\n");
-    printf("╚══════════════════════════════════════════════════════════════╝\n");
+    printf("\n[AST -> DAG (value-number + constant folding)]\n");
 
     /* Print live nodes */
     for (int i = 0; i < dag->count; i++) {
@@ -638,12 +635,12 @@ void print_dag(DAG *dag) {
         char val[128];
         node_value_str(n, val, sizeof(val));
 
-        printf("\n┌─ #%-4d  %-14s  %s", n->id, node_label(n->type), val);
+        printf("\n[#%-4d]  %-14s  %s", n->id, node_label(n->type), val);
         if (n->is_root)   printf("  [ROOT]");
         if (n->is_folded) printf("  [FOLDED]");
-        if (n->ref_count > 1) printf("  [shared×%d]", n->ref_count);
+        if (n->ref_count > 1) printf("  [shared x%d]", n->ref_count);
         printf("\n");
-        printf("│  ref_count=%d\n", n->ref_count);
+        printf("  ref_count=%d\n", n->ref_count);
 
         print_edge("left",   n->left_id,   dag);
         print_edge("right",  n->right_id,  dag);
@@ -658,7 +655,6 @@ void print_dag(DAG *dag) {
             snprintf(lbl, sizeof(lbl), "[%d]", c);
             print_edge(lbl, n->child_ids[c], dag);
         }
-        printf("└─────────────────────────────────────────────────────────\n");
     }
 
     /* Summarise dead nodes */

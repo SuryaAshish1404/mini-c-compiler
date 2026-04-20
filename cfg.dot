@@ -1,0 +1,7 @@
+digraph CFG {
+    node [shape=box fontname="Courier"];
+    rankdir=TB;
+
+    BB0 [label="BB0\nASSIGN\n..." style=filled fillcolor=lightblue];
+
+}

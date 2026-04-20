@@ -1,0 +1,112 @@
+﻿Parsing 'test\test_cfg_regalloc.c'...
+
+.\mini_compiler.exe : [DEBUG] AST root type: 0, num_children: 1
+At line:1 char:11
++ $output = .\mini_compiler.exe test\test_cfg_regalloc.c output.c test_ ...
++           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([DEBUG] AST roo...num_children: 1:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[DEBUG] Child 0 type: 25
+[DEBUG] Nested child 0 type: 3
+[DEBUG] Processing function: fibonacci, body=000001f0639e8c80
+[DEBUG] Function body type: 12
+[DEBUG gen_stmt] Node type: 12
+[DEBUG] COMPOUND_STMT, body=000001f0639e6c10
+[DEBUG] Processing compound body, type=26
+[DEBUG gen_stmt] Node type: 26
+[DEBUG] STATEMENT_LIST, num_children=6
+[DEBUG] Processing statement 0, type=2
+[DEBUG gen_stmt] Node type: 2
+[DEBUG] Processing statement 1, type=2
+[DEBUG gen_stmt] Node type: 2
+[DEBUG] Processing statement 2, type=2
+[DEBUG gen_stmt] Node type: 2
+[DEBUG] Processing statement 3, type=2
+[DEBUG gen_stmt] Node type: 2
+[DEBUG] Processing statement 4, type=14
+[DEBUG gen_stmt] Node type: 14
+[DEBUG gen_stmt] Node type: 12
+[DEBUG] COMPOUND_STMT, body=000001f063aede40
+[DEBUG] Processing compound body, type=26
+[DEBUG gen_stmt] Node type: 26
+[DEBUG] STATEMENT_LIST, num_children=4
+[DEBUG] Processing statement 0, type=17
+[DEBUG gen_stmt] Node type: 17
+[DEBUG] Processing statement 1, type=17
+[DEBUG gen_stmt] Node type: 17
+[DEBUG] Processing statement 2, type=17
+[DEBUG gen_stmt] Node type: 17
+[DEBUG] Processing statement 3, type=17
+[DEBUG gen_stmt] Node type: 17
+[DEBUG] Processing statement 5, type=16
+[DEBUG gen_stmt] Node type: 16
+[DEBUG] Nested child 1 type: 3
+[DEBUG] Processing function: factorial, body=000001f0639e8440
+[DEBUG] Function body type: 12
+[DEBUG gen_stmt] Node type: 12
+[DEBUG] COMPOUND_STMT, body=000001f0639e9af0
+[DEBUG] Processing compound body, type=26
+[DEBUG gen_stmt] Node type: 26
+[DEBUG] STATEMENT_LIST, num_children=4
+[DEBUG] Processing statement 0, type=2
+[DEBUG gen_stmt] Node type: 2
+[DEBUG] Processing statement 1, type=2
+[DEBUG gen_stmt] Node type: 2
+[DEBUG] Processing statement 2, type=14
+[DEBUG gen_stmt] Node type: 14
+[DEBUG gen_stmt] Node type: 12
+[DEBUG] COMPOUND_STMT, body=000001f0639ead80
+[DEBUG] Processing compound body, type=26
+[DEBUG gen_stmt] Node type: 26
+[DEBUG] STATEMENT_LIST, num_children=2
+[DEBUG] Processing statement 0, type=17
+[DEBUG gen_stmt] Node type: 17
+[DEBUG] Processing statement 1, type=17
+[DEBUG gen_stmt] Node type: 17
+[DEBUG] Processing statement 3, type=16
+[DEBUG gen_stmt] Node type: 16
+[DEBUG] Nested child 2 type: 3
+[DEBUG] Processing function: main, body=000001f0639f8480
+[DEBUG] Function body type: 12
+[DEBUG gen_stmt] Node type: 12
+[DEBUG] COMPOUND_STMT, body=000001f0639ecea0
+[DEBUG] Processing compound body, type=26
+[DEBUG gen_stmt] Node type: 26
+[DEBUG] STATEMENT_LIST, num_children=10
+[DEBUG] Processing statement 0, type=2
+[DEBUG gen_stmt] Node type: 2
+[DEBUG] Processing statement 1, type=2
+[DEBUG gen_stmt] Node type: 2
+[DEBUG] Processing statement 2, type=2
+[DEBUG gen_stmt] Node type: 2
+[DEBUG] Processing statement 3, type=13
+[DEBUG gen_stmt] Node type: 13
+[DEBUG gen_stmt] Node type: 12
+[DEBUG] COMPOUND_STMT, body=000001f0639edb00
+[DEBUG] Processing compound body, type=26
+[DEBUG gen_stmt] Node type: 26
+[DEBUG] STATEMENT_LIST, num_children=1
+[DEBUG] Processing statement 0, type=17
+[DEBUG gen_stmt] Node type: 17
+[DEBUG gen_stmt] Node type: 12
+[DEBUG] COMPOUND_STMT, body=000001f0639ed8f0
+[DEBUG] Processing compound body, type=26
+[DEBUG gen_stmt] Node type: 26
+[DEBUG] STATEMENT_LIST, num_children=1
+[DEBUG] Processing statement 0, type=17
+[DEBUG gen_stmt] Node type: 17
+[DEBUG] Processing statement 4, type=2
+[DEBUG gen_stmt] Node type: 2
+[DEBUG] Processing statement 5, type=2
+[DEBUG gen_stmt] Node type: 2
+[DEBUG] Processing statement 6, type=2
+[DEBUG gen_stmt] Node type: 2
+[DEBUG] Processing statement 7, type=2
+[DEBUG gen_stmt] Node type: 2
+[DEBUG] Processing statement 8, type=15
+[DEBUG gen_stmt] Node type: 15
+[DEBUG] Processing statement 9, type=16
+[DEBUG gen_stmt] Node type: 16
+[DEBUG] Final IR count: 46
+
