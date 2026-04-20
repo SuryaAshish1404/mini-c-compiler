@@ -3,25 +3,25 @@
 #include <string.h>
 #include <stdio.h>
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Internal constants
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 #define INIT_INSTR_CAP 16
 #define INIT_PRED_CAP   4
 #define INIT_BLOCK_CAP 32
 #define INIT_EDGE_CAP  64
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Helpers
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 static int is_conditional(IROpcode op) {
     return op == IR_IF_FALSE || op == IR_IF_TRUE;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Block / edge allocation
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 static void bb_push_instr(BasicBlock *bb, IR *ir) {
     if (bb->instr_count == bb->instr_cap) {
@@ -86,9 +86,9 @@ static void cfg_add_edge(CFG *cfg, int src, int dst) {
     cfg->edge_count++;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Step 1 – leader identification
- * ═══════════════════════════════════════════════════════════════════════════
+ * ===========================================================================
  *
  *  An instruction at index i is a leader if:
  *    (a) i == 0  (first instruction)
@@ -120,11 +120,11 @@ static void find_leaders(IR **instr, int n, int *leader) {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Step 2 – RPO (Reverse Post-Order) via iterative DFS
  *
  *  Returns the count of reachable blocks and fills rpo_order[].
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 /* Iterative DFS post-order to avoid stack overflow on large CFGs. */
 static int compute_rpo(CFG *cfg, int *rpo_order) {
@@ -176,12 +176,12 @@ static int compute_rpo(CFG *cfg, int *rpo_order) {
     return post_cnt; /* reachable block count */
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Step 3 – Dominator tree  (Cooper, Harvey, Kennedy 2001)
  *
  *  idom_rpo[i]  = RPO index of the immediate dominator of the block whose
  *                 RPO index is i.
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 /* Walk up the dominator tree until both fingers meet. */
 static int intersect(const int *idom_rpo, int a, int b) {
@@ -239,12 +239,12 @@ static void compute_dominators(CFG *cfg, const int *rpo_order, int rpo_count) {
     free(idom_rpo);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Step 4 – Back-edge detection
  *
  *  An edge u → v is a back edge iff v dominates u in the dominator tree.
  *  Such a v is marked as a loop header.
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 /* Returns 1 if `dom` dominates `b` (walks up idom chain). */
 static int dominates(CFG *cfg, int dom, int b) {
@@ -269,13 +269,13 @@ static void detect_back_edges(CFG *cfg) {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  build_cfg  – public entry point
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 CFG *build_cfg(IRList *ir_list) {
     if (!ir_list || !ir_list->head || ir_list->count == 0) return NULL;
 
-    /* ── flatten linked list → random-access array ── */
+    /* -- flatten linked list → random-access array -- */
     int n = ir_list->count;
     IR **instr = (IR **)malloc(n * sizeof(IR *));
     {
@@ -290,11 +290,11 @@ CFG *build_cfg(IRList *ir_list) {
         }
     }
 
-    /* ── Step 1: leaders ── */
+    /* -- Step 1: leaders -- */
     int *leader = (int *)calloc(n, sizeof(int));
     find_leaders(instr, n, leader);
 
-    /* ── Step 2: create basic blocks ── */
+    /* -- Step 2: create basic blocks -- */
     CFG *cfg = (CFG *)malloc(sizeof(CFG));
     memset(cfg, 0, sizeof(CFG));
     cfg->block_cap = INIT_BLOCK_CAP;
@@ -316,7 +316,7 @@ CFG *build_cfg(IRList *ir_list) {
         if (cur_bb_id >= 0) bb_push_instr(&cfg->blocks[cur_bb_id], instr[i]);
     }
 
-    /* ── Build label_num → block_id map ── */
+    /* -- Build label_num → block_id map -- */
     int max_label = 0;
     for (int i = 0; i < n; i++)
         if (instr[i]->label_num > max_label) max_label = instr[i]->label_num;
@@ -333,7 +333,7 @@ CFG *build_cfg(IRList *ir_list) {
         }
     }
 
-    /* ── Step 3: connect edges ── */
+    /* -- Step 3: connect edges -- */
     for (int b = 0; b < cfg->block_count; b++) {
         BasicBlock *bb = &cfg->blocks[b];
         if (bb->instr_count == 0) continue;
@@ -362,7 +362,7 @@ CFG *build_cfg(IRList *ir_list) {
         }
     }
 
-    /* ── Step 4: RPO + dominator tree + back edges ── */
+    /* -- Step 4: RPO + dominator tree + back edges -- */
     int *rpo_order = (int *)malloc(cfg->block_count * sizeof(int));
     int  rpo_count = compute_rpo(cfg, rpo_order);
     compute_dominators(cfg, rpo_order, rpo_count);
@@ -377,9 +377,9 @@ CFG *build_cfg(IRList *ir_list) {
     return cfg;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  free_cfg
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 void free_cfg(CFG *cfg) {
     if (!cfg) return;
     for (int i = 0; i < cfg->block_count; i++) {
@@ -391,20 +391,20 @@ void free_cfg(CFG *cfg) {
     free(cfg);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  print_cfg  – dump every block with its instructions and edges
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 void print_cfg(CFG *cfg) {
     if (!cfg) return;
-    printf("\n╔══════════════════════════════════════════════════════════════╗\n");
-    printf("║               Control Flow Graph  (%d blocks)                ║\n",
+    printf("\n+==============================================================+\n");
+    printf("|               Control Flow Graph  (%d blocks)                |\n",
            cfg->block_count);
-    printf("╚══════════════════════════════════════════════════════════════╝\n");
+    printf("+==============================================================+\n");
 
     for (int b = 0; b < cfg->block_count; b++) {
         BasicBlock *bb = &cfg->blocks[b];
 
-        printf("\n┌─ %s", bb->name);
+        printf("\n+- %s", bb->name);
         if (bb->is_loop_header) printf("  [LOOP HEADER]");
         printf("  (RPO=%d  idom=%s)\n",
                bb->rpo_num,
@@ -439,7 +439,7 @@ void print_cfg(CFG *cfg) {
                    back ? "(back)" : "",
                    s < bb->succ_count - 1 ? ", " : "");
         }
-        printf("\n└─────────────────────────────────────\n");
+        printf("\n+-------------------------------------\n");
     }
 
     printf("\nEdge summary  (%d edges):\n", cfg->edge_count);
@@ -451,9 +451,9 @@ void print_cfg(CFG *cfg) {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  print_dominator_tree  – print the idom relationship and tree structure
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 /* Recursively print dominator tree rooted at `root`, indented by `depth`. */
 static void print_dom_node(CFG *cfg, int root, int depth) {
@@ -471,14 +471,14 @@ static void print_dom_node(CFG *cfg, int root, int depth) {
 
 void print_dominator_tree(CFG *cfg) {
     if (!cfg) return;
-    printf("\n╔══════════════════════════════════════════════════════════════╗\n");
-    printf("║                      Dominator Tree                         ║\n");
-    printf("╚══════════════════════════════════════════════════════════════╝\n\n");
+    printf("\n+==============================================================+\n");
+    printf("|                      Dominator Tree                         |\n");
+    printf("+==============================================================+\n\n");
     print_dom_node(cfg, cfg->entry, 0);
 
     printf("\nImmediate dominator table:\n");
     printf("  %-10s  %-10s\n", "Block", "idom");
-    printf("  %-10s  %-10s\n", "─────", "────");
+    printf("  %-10s  %-10s\n", "-----", "----");
     for (int b = 0; b < cfg->block_count; b++) {
         printf("  %-10s  %s\n",
                cfg->blocks[b].name,
@@ -488,12 +488,12 @@ void print_dominator_tree(CFG *cfg) {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  print_loops  – identify natural loops via back edges
  *
  *  For a back edge (n → h), the natural loop body is:
  *    { h } ∪ { all blocks that can reach n going backwards, stopping at h }
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 static void collect_loop_body(CFG *cfg, int header, int tail,
                               int *in_loop, int *worklist) {
@@ -517,9 +517,9 @@ static void collect_loop_body(CFG *cfg, int header, int tail,
 
 void print_loops(CFG *cfg) {
     if (!cfg) return;
-    printf("\n╔══════════════════════════════════════════════════════════════╗\n");
-    printf("║                     Loop Identification                      ║\n");
-    printf("╚══════════════════════════════════════════════════════════════╝\n");
+    printf("\n+==============================================================+\n");
+    printf("|                     Loop Identification                      |\n");
+    printf("+==============================================================+\n");
 
     int loop_count = 0;
     int *in_loop  = (int *)malloc(cfg->block_count * sizeof(int));
@@ -555,9 +555,9 @@ void print_loops(CFG *cfg) {
     free(worklist);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  print_cfg_dot  – Graphviz DOT output
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 void print_cfg_dot(CFG *cfg, FILE *out) {
     if (!cfg || !out) return;
     fprintf(out, "digraph CFG {\n");

@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <ctype.h>
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Physical register table
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 static const char *phys_names[RA_K] = {
     /* callee-saved 0-4 */
@@ -31,9 +31,9 @@ int ra_callee_mask(int colour) {
     return callee_bits[colour];
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  VarMap
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 int varmap_intern(VarMap *vm, const char *name) {
     int existing = varmap_find(vm, name);
@@ -49,9 +49,9 @@ int varmap_find(const VarMap *vm, const char *name) {
     return -1;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Interference graph
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 void ig_add_edge(IGraph *g, int u, int v) {
     if (u == v) return;
@@ -59,9 +59,9 @@ void ig_add_edge(IGraph *g, int u, int v) {
     if (!BS_TEST(g->adj[v], u)) { BS_SET(g->adj[v], u); g->degree[v]++; }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Union-Find coalescing map
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 static void cm_init(CoalesceMap *cm, int n) {
     for (int i = 0; i < n; i++) cm->parent[i] = i;
@@ -81,9 +81,9 @@ void cm_union(CoalesceMap *cm, int x, int y) {
     if (x != y) cm->parent[y] = x;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Helpers: classify an IR operand
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 static int is_virtual(const char *s) {
     if (!s || !s[0]) return 0;
@@ -93,9 +93,9 @@ static int is_virtual(const char *s) {
     return 1;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Phase 1 — Build VarMap + use/def sets per basic block
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 static void build_use_def(RAResult *r, CFG *cfg) {
     for (int b = 0; b < cfg->block_count; b++) {
@@ -126,14 +126,14 @@ static void build_use_def(RAResult *r, CFG *cfg) {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Phase 2 — Backward liveness dataflow
  *
  *  live_out[B] = ∪ live_in[S]   for each successor S of B
  *  live_in[B]  = use[B]  ∪  (live_out[B] − def[B])
  *
  *  Iterate until no live_in changes (guaranteed to terminate).
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 static void compute_liveness(RAResult *r, CFG *cfg) {
     int changed = 1;
@@ -166,13 +166,13 @@ static void compute_liveness(RAResult *r, CFG *cfg) {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Phase 3 — Build interference graph
  *
  *  For each instruction that defines variable d:
  *    all variables live simultaneously with d at that point interfere with d.
  *  We simulate the live set backward through each block.
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 static void build_interference(RAResult *r, CFG *cfg) {
     for (int b = 0; b < cfg->block_count; b++) {
@@ -209,14 +209,14 @@ static void build_interference(RAResult *r, CFG *cfg) {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Phase 4 — Register coalescing (conservative Briggs criterion)
  *
  *  For each IR_ASSIGN "a = b" where a and b are both virtual:
  *    Merge a and b into one equivalence class unless coalescing would cause
  *    the merged node to have ≥ K high-degree neighbours (Briggs test).
  *    After merging, remove the copy instruction by marking it as a no-op.
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 static void coalesce(RAResult *r, CFG *cfg) {
     cm_init(&r->cm, r->vars.count);
@@ -254,7 +254,7 @@ static void coalesce(RAResult *r, CFG *cfg) {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Phase 5 — Chaitin-Briggs graph colouring
  *
  *  Simplify phase: repeatedly pick a node with degree < K and push it onto
@@ -262,7 +262,7 @@ static void coalesce(RAResult *r, CFG *cfg) {
  *
  *  Select phase: pop nodes from the stack, assign the lowest available colour
  *  not used by any already-coloured neighbour.
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 
 static void colour_graph(RAResult *r, int next_spill_offset) {
     int n = r->vars.count;
@@ -342,9 +342,9 @@ static void colour_graph(RAResult *r, int next_spill_offset) {
     free(wdeg); free(removed); free(stack);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  regalloc_run  — public entry point
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 RAResult *regalloc_run(CFG *cfg, int next_spill_offset) {
     RAResult *r = (RAResult *)calloc(1, sizeof(RAResult));
 
@@ -359,9 +359,9 @@ RAResult *regalloc_run(CFG *cfg, int next_spill_offset) {
 
 void regalloc_free(RAResult *r) { free(r); }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  ra_operand  — translate virtual name → asm operand string
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 const char *ra_operand(const RAResult *r, const char *name, char *buf) {
     if (!is_virtual(name)) {
         /* Already a constant or physical reg — return as-is. */
@@ -385,13 +385,13 @@ const char *ra_operand(const RAResult *r, const char *name, char *buf) {
     return buf;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
  *  Print helpers
- * ═══════════════════════════════════════════════════════════════════════════ */
+ * =========================================================================== */
 void print_liveness(const RAResult *r) {
-    printf("\n╔══════════════════════════════════════════════════╗\n");
-    printf("║              Liveness Analysis                   ║\n");
-    printf("╚══════════════════════════════════════════════════╝\n");
+    printf("\n+==================================================+\n");
+    printf("|              Liveness Analysis                   |\n");
+    printf("+==================================================+\n");
     /* (Block count not stored in RAResult; caller can print per-block.) */
     printf("  Variables discovered: %d\n", r->vars.count);
     for (int i = 0; i < r->vars.count; i++)
@@ -399,9 +399,9 @@ void print_liveness(const RAResult *r) {
 }
 
 void print_interference(const RAResult *r) {
-    printf("\n╔══════════════════════════════════════════════════╗\n");
-    printf("║            Interference Graph                    ║\n");
-    printf("╚══════════════════════════════════════════════════╝\n");
+    printf("\n+==================================================+\n");
+    printf("|            Interference Graph                    |\n");
+    printf("+==================================================+\n");
     for (int i = 0; i < r->vars.count; i++) {
         printf("  v%-3d (%s) deg=%-3d  interferes: ",
                i, r->vars.name[i], r->ig.degree[i]);
@@ -412,9 +412,9 @@ void print_interference(const RAResult *r) {
 }
 
 void print_colouring(const RAResult *r) {
-    printf("\n╔══════════════════════════════════════════════════╗\n");
-    printf("║          Chaitin-Briggs Colouring                ║\n");
-    printf("╚══════════════════════════════════════════════════╝\n");
+    printf("\n+==================================================+\n");
+    printf("|          Chaitin-Briggs Colouring                |\n");
+    printf("+==================================================+\n");
     printf("  K = %d colours,  coalesced = %d,  spills = %d\n",
            RA_K, r->n_coalesced, r->n_spills);
     for (int i = 0; i < r->vars.count; i++) {
