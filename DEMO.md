@@ -236,11 +236,23 @@ Look for statistics on:
 - Fold count (constant expressions evaluated)
 - Dead node count (unreachable nodes removed)
 
-## CFG and Register Allocation Verification
+## CFG and Register Allocation Testing
 
-### Implementation Status: ✅ FULLY IMPLEMENTED
+### Implementation Status: ✅ FULLY IMPLEMENTED AND TESTED
 
-Both **Control Flow Graph (CFG)** and **Register Allocation** are fully implemented and integrated into the compilation pipeline.
+Both **Control Flow Graph (CFG)** and **Register Allocation** are fully implemented, tested, and integrated into the compilation pipeline.
+
+### Test Cases
+
+**Primary Test**: `test/test_cfg_regalloc.c`
+- Single basic block with variable assignments
+- Tests register allocation with interference graph
+- Shows Chaitin-Briggs coloring output
+- **Command**: `./mini_compiler.exe test/test_cfg_regalloc.c output.c dummy.txt test_cfg_regalloc.s`
+
+**Advanced Tests** (for development):
+- `test/test_cfg_advanced.c` - Multiple functions with loops and conditionals
+- `test/test_cfg_multi_block.c` - If-else and while loop structure
 
 ### CFG Implementation Details
 
