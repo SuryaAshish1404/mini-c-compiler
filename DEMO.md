@@ -196,33 +196,33 @@ The compiler outputs detailed analysis to stdout:
 
 #### Control Flow Graph
 ```
-╔══════════════════════════════════════════════════════════════╗
-║               Control Flow Graph  (N blocks)                 ║
-╚══════════════════════════════════════════════════════════════╝
++==============================================================+
+|               Control Flow Graph  (N blocks)                |
++==============================================================+
 ```
 Shows basic blocks, predecessors, successors, and back edges.
 
 #### Liveness Analysis
 ```
-╔══════════════════════════════════════════════════════════════╗
-║                    Liveness Analysis                         ║
-╚══════════════════════════════════════════════════════════════╝
++==============================================================+
+|                    Liveness Analysis                        |
++==============================================================+
 ```
 Shows which variables are live at entry/exit of each block.
 
 #### Interference Graph
 ```
-╔══════════════════════════════════════════════════════════════╗
-║                  Interference Graph                          ║
-╚══════════════════════════════════════════════════════════════╝
++==============================================================+
+|                  Interference Graph                         |
++==============================================================+
 ```
 Shows which variables interfere (are live simultaneously).
 
 #### Register Allocation Results
 ```
-╔══════════════════════════════════════════════════════════════╗
-║              Register Allocation (Chaitin-Briggs)            ║
-╚══════════════════════════════════════════════════════════════╝
++==============================================================+
+|              Register Allocation (Chaitin-Briggs)           |
++==============================================================+
 ```
 Shows physical register assignments and spilled variables.
 
@@ -356,18 +356,52 @@ Created comprehensive test with:
 
 ### How to View CFG and Register Allocation Output
 
-Run compiler with 3 arguments to trigger full pipeline:
-```powershell
-.\mini_compiler.exe test\test_cfg_regalloc.c output.c test.s
+Run compiler with CFG and register allocation test case:
+```bash
+./mini_compiler.exe test/test_cfg_regalloc.c output.c dummy.txt test_cfg_regalloc.s
 ```
 
 This will print to stdout:
-- **Control Flow Graph**: Basic blocks with predecessors/successors
-- **Dominator Tree**: Immediate dominator relationships
-- **Loop Identification**: Back edges and loop bodies
-- **Liveness Analysis**: Variables discovered and live ranges
-- **Interference Graph**: Variable conflicts
-- **Chaitin-Briggs Coloring**: Register assignments and spills
+- **Control Flow Graph**: Basic blocks with predecessors/successors, back edges, loop headers
+- **Dominator Tree**: Immediate dominator relationships for all basic blocks
+- **Loop Identification**: Back edges and natural loop bodies
+- **Liveness Analysis**: Variables discovered and live ranges per basic block
+- **Interference Graph**: Variable conflicts and degree computation
+- **Chaitin-Briggs Coloring**: Register assignments and spilled variables
+
+**Example Output**:
+```
++==============================================================+
+|               Control Flow Graph  (1 blocks)                |
++==============================================================+
+
++- BB0  (RPO=0  idom=BB0)
+|  preds: (none)
+|  instructions:
+|    [ 0]     x = 5
+|    [ 1]     y = 10
+|  succs: (none)
+
++==============================================================+
+|              Liveness Analysis                   |
++==============================================================+
+Variables discovered: 2
+  v0   = x
+  v1   = y
+
++==============================================================+
+|            Interference Graph                    |
++==============================================================+
+v0   (x) deg=1    interferes: v1 
+v1   (y) deg=1    interferes: v0 
+
++==============================================================+
+|          Chaitin-Briggs Colouring                |
++==============================================================+
+K = 13 colours,  coalesced = 0,  spills = 0
+x                    → %r12
+y                    → %rbx
+```
 
 ### Implementation Verification Summary
 
