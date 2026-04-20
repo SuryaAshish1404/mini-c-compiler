@@ -411,7 +411,7 @@ void print_cfg(CFG *cfg) {
                bb->idom >= 0 ? cfg->blocks[bb->idom].name : "none");
 
         /* predecessors */
-        printf("│  preds: ");
+        printf("|  preds: ");
         if (bb->pred_count == 0) printf("(none)");
         for (int p = 0; p < bb->pred_count; p++)
             printf("%s%s", cfg->blocks[bb->preds[p]].name,
@@ -419,14 +419,14 @@ void print_cfg(CFG *cfg) {
         printf("\n");
 
         /* instructions */
-        printf("│  instructions:\n");
+        printf("|  instructions:\n");
         for (int i = 0; i < bb->instr_count; i++) {
-            printf("│    [%2d] ", i);
+            printf("|    [%2d] ", i);
             print_ir(bb->instrs[i]);
         }
 
         /* successors */
-        printf("│  succs: ");
+        printf("|  succs: ");
         if (bb->succ_count == 0) printf("(none)");
         for (int s = 0; s < bb->succ_count; s++) {
             /* find edge to determine if it's a back edge */
