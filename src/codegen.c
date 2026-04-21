@@ -311,12 +311,11 @@ static void emit_instr(CodeGenContext *ctx, IR *ir) {
  *
  *  Pipeline:
  *    1. Lower alloc() calls → IR_ALLOC
- *    2. Emit runtime heap support code
- *    3. Build CFG
- *    4. Run register allocation (liveness → interference → Chaitin-Briggs)
- *    5. Build frame layout (using spill slots from regalloc)
- *    6. Detect function boundaries, emit prologue/epilogue around bodies
- *    7. Emit each instruction with operands resolved via cg_operand()
+ *    2. Build CFG
+ *    3. Run register allocation (liveness → interference → Chaitin-Briggs)
+ *    4. Build frame layout (using spill slots from regalloc)
+ *    5. Detect function boundaries, emit prologue/epilogue around bodies
+ *    6. Emit each instruction with operands resolved via cg_operand()
  * ═══════════════════════════════════════════════════════════════════════════ */
 void generate_assembly(IRList *ir_list, FILE *output) {
     if (!ir_list || !output) return;
@@ -324,20 +323,15 @@ void generate_assembly(IRList *ir_list, FILE *output) {
     /* 1. Lower alloc() calls. */
     lower_alloc_calls(ir_list);
 
-    /* 2. Emit runtime support (heap allocators). */
-    fprintf(output, "    .text\n");
-    emit_heap_runtime(output);
-    fprintf(output, "\n    .text\n");
-
-    /* 3. Build CFG. */
+    /* 2. Build CFG. */
     CFG *cfg = build_cfg(ir_list);
 
-    /* 4. Register allocation.
+    /* 3. Register allocation.
      *    Use offset -8 as the starting spill offset so spill slots don't
      *    overlap with the callee-saved saves. The frame builder adjusts. */
     RAResult *ra = cfg ? regalloc_run(cfg, -8) : NULL;
 
-    /* 5. Frame layout.
+    /* 4. Frame layout.
      *    Pass the callee mask from regalloc so the prologue pushes the right
      *    registers; pass n_spills as extra slots. */
     int callee_mask  = ra ? ra->callee_mask  : 0;
@@ -349,7 +343,7 @@ void generate_assembly(IRList *ir_list, FILE *output) {
     ctx->ra    = ra;
     ctx->frame = fl;
 
-    /* 6 + 7. Walk IR, detect function entry/exit, emit instructions. */
+    /* 5 + 6. Walk IR, detect function entry/exit, emit instructions. */
     int in_function = 0;
     IR *ir = ir_list->head;
     while (ir) {

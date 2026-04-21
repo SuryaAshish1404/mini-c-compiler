@@ -2,6 +2,18 @@ digraph CFG {
     node [shape=box fontname="Courier"];
     rankdir=TB;
 
-    BB0 [label="BB0\nASSIGN\n..." style=filled fillcolor=lightblue];
+    BB0 [label="BB0\nLABEL\n..." style=filled fillcolor=lightblue];
+    BB1 [label="BB1\nASSIGN\n..."];
+    BB2 [label="BB2\nADD\n..."];
+    BB3 [label="BB3\nADD\n..."];
+    BB4 [label="BB4\nLABEL\n..."];
+    BB5 [label="BB5\nLABEL\n..."];
+    BB6 [label="BB6\nSUB\n..."];
+    BB7 [label="BB7\nLABEL\n..."];
+    BB8 [label="BB8\nLABEL\n..."];
 
+    BB0 -> BB1;
+    BB1 -> BB2;
+    BB2 -> BB3;
+    BB5 -> BB6;
 }

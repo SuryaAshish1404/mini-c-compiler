@@ -38,6 +38,10 @@ void generate_decl_ir(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
         case AST_FUNCTION_DECL:
             fprintf(stderr, "[DEBUG] Processing function: %s, body=%p\n", node->name, (void*)node->body);
             if (node->body) {
+                IR *fn_label = create_ir(IR_LABEL);
+                strcpy(fn_label->op, "LABEL");
+                strncpy(fn_label->result, node->name, sizeof(fn_label->result) - 1);
+                append_ir(ir_list, fn_label);
                 fprintf(stderr, "[DEBUG] Function body type: %d\n", node->body->type);
                 gen_stmt(ir_list, node->body, sym_table);
             } else {
@@ -177,7 +181,9 @@ static void gen_stmt(IRList *ir_list, ASTNode *node, SymbolTable *sym_table) {
             }
             break;
         case AST_EXPR_STMT:
-            if (node->left) {
+            if (node->left && node->left->type == AST_ASSIGNMENT) {
+                gen_stmt(ir_list, node->left, sym_table);
+            } else if (node->left) {
                 char *result = gen_expr(ir_list, node->left, sym_table);
                 if (result) free(result);
             }

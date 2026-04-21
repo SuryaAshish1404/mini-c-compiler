@@ -24,6 +24,27 @@ static int is_constant(const char* str) {
     return 1;
 }
 
+static int is_cse_eligible(IROpcode opcode) {
+    switch (opcode) {
+        case IR_ADD:
+        case IR_SUB:
+        case IR_MUL:
+        case IR_DIV:
+        case IR_MOD:
+        case IR_EQ:
+        case IR_NEQ:
+        case IR_LT:
+        case IR_GT:
+        case IR_LEQ:
+        case IR_GEQ:
+        case IR_AND:
+        case IR_OR:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
 static int eval_constant_op(int left, int right, IROpcode op) {
     switch (op) {
         case IR_ADD: return left + right;
@@ -50,7 +71,7 @@ int optimize_constant_folding(IRList* ir_list) {
     IR* current = ir_list->head;
     
     while (current) {
-        if (current->opcode >= IR_ADD && current->opcode <= IR_OR) {
+        if (is_cse_eligible(current->opcode)) {
             if (is_constant(current->arg1) && is_constant(current->arg2)) {
                 int left_val = atoi(current->arg1);
                 int right_val = atoi(current->arg2);
@@ -114,6 +135,15 @@ static int is_variable_used_after(IRList* ir_list, IR* start, const char* var) {
 
 int optimize_dead_code_elimination(IRList* ir_list) {
     if (!ir_list) return 0;
+
+    /* DCE is only safe for straight-line code; skip if control flow exists. */
+    for (IR *scan = ir_list->head; scan; scan = scan->next) {
+        if (scan->opcode == IR_LABEL || scan->opcode == IR_GOTO ||
+            scan->opcode == IR_IF_FALSE || scan->opcode == IR_IF_TRUE ||
+            scan->opcode == IR_FOR_BEGIN || scan->opcode == IR_FOR_END) {
+            return 0;
+        }
+    }
     
     int changes = 0;
     IR* current = ir_list->head;
@@ -123,8 +153,10 @@ int optimize_dead_code_elimination(IRList* ir_list) {
         IR* next = current->next;
         int should_remove = 0;
         
-        if (current->opcode == IR_ASSIGN || 
-            (current->opcode >= IR_ADD && current->opcode <= IR_NOT)) {
+        if (current->opcode == IR_ASSIGN ||
+            is_cse_eligible(current->opcode) ||
+            current->opcode == IR_NOT ||
+            current->opcode == IR_NEG) {
             if (current->result[0] != '\0' && current->result[0] != '_') {
                 if (!is_variable_used_after(ir_list, current, current->result)) {
                     should_remove = 1;
@@ -191,7 +223,7 @@ int optimize_common_subexpression_elimination(IRList* ir_list) {
     
     IR* current = ir_list->head;
     while (current) {
-        if (current->opcode >= IR_ADD && current->opcode <= IR_OR) {
+        if (is_cse_eligible(current->opcode)) {
             Expression expr;
             expr.opcode = current->opcode;
             strncpy(expr.arg1, current->arg1, sizeof(expr.arg1) - 1);

@@ -343,6 +343,52 @@ Created comprehensive test with:
 - Multiple live variables requiring register allocation
 - Function calls with parameter passing
 
+### Test Case: test_if_nested_loops.c (Assembly Generation)
+
+Added a focused non-tensor test that stresses **if statements** and **nested loops** for assembly generation.
+
+**File**: `test/test_if_nested_loops.c`
+
+```c
+int main() {
+    int sum = 0;
+    int i = 0;
+
+    while (i < 5) {
+        int j = 0;
+        while (j < 4) {
+            if ((i + j) % 2 == 0) {
+                sum = sum + i + j;
+            } else {
+                sum = sum - i;
+            }
+            j = j + 1;
+        }
+        if (sum > 10) {
+            sum = sum - 3;
+        } else {
+            sum = sum + 2;
+        }
+        i = i + 1;
+    }
+
+    return sum;
+}
+```
+
+**Run (assembly generation):**
+```powershell
+.\mini_compiler.exe test\test_if_nested_loops.c output.c test_if_nested_loops.s
+```
+
+**Build + Run (full sequence):**
+```powershell
+$env:Path = "C:\msys64\usr\bin;C:\msys64\mingw64\bin;" + $env:Path
+make
+.\mini_compiler.exe test\test_if_nested_loops.c output.c test_if_nested_loops.s
+Get-Content test_if_nested_loops.s -TotalCount 40
+```
+
 ### Verification Through Assembly Output
 
 **Evidence in generated assembly** (`optimized.s`):
@@ -366,26 +412,21 @@ Created comprehensive test with:
    - Loop back edges
    - Function prologues/epilogues at block boundaries
 
+**Note:** Runtime heap support emission has been removed, so the `.s` output now contains only the optimized program assembly (no allocator runtime stubs).
+
 ### How to View CFG and Register Allocation Output
 
-Run compiler with CFG and register allocation test case:
-```bash
-./mini_compiler.exe test/test_cfg_regalloc.c output.c dummy.txt test_cfg_regalloc.s
+Run compiler with **4 arguments** to trigger full pipeline:
+```powershell
+# The 4th argument triggers CFG/register allocation output
+.\mini_compiler.exe test\test_simple.c output.c dummy.txt test_simple.s
 ```
 
-This will print to stdout:
-- **Control Flow Graph**: Basic blocks with predecessors/successors, back edges, loop headers
-- **Dominator Tree**: Immediate dominator relationships for all basic blocks
-- **Loop Identification**: Back edges and natural loop bodies
-- **Liveness Analysis**: Variables discovered and live ranges per basic block
-- **Interference Graph**: Variable conflicts and degree computation
-- **Chaitin-Briggs Coloring**: Register assignments and spilled variables
-
-**Example Output**:
+**Verified Working Output:**
 ```
-+==============================================================+
-|               Control Flow Graph  (1 blocks)                |
-+==============================================================+
+╔══════════════════════════════════════════════════════════════╗
+║               Control Flow Graph  (1 blocks)                ║
+╚══════════════════════════════════════════════════════════════╝
 
 +- BB0  (RPO=0  idom=BB0)
 |  preds: (none)

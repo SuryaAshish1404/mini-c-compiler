@@ -1,0 +1,23 @@
+Parsing 'test/test_simple_tensor.c'...
+
+./mini_compiler : [DEBUG] AST root type: 0, num_children: 1
+At line:1 char:1
++ ./mini_compiler test/test_simple_tensor.c output.c test_assembly.s 2> ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([DEBUG] AST roo...num_children: 1:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[DEBUG] Child 0 type: 25
+[DEBUG] Nested child 0 type: 4
+[DEBUG] Nested child 1 type: 4
+[DEBUG] Nested child 2 type: 4
+[DEBUG] Nested child 3 type: 3
+[DEBUG] Processing function: main, body=0000023cb2febf00
+[DEBUG] Function body type: 12
+[DEBUG gen_stmt] Node type: 12
+[DEBUG] COMPOUND_STMT, body=0000023cb2feb8d0
+[DEBUG] Processing compound body, type=26
+[DEBUG gen_stmt] Node type: 26
+[DEBUG] STATEMENT_LIST, num_children=2
+[DEBUG] Processing statement 0, type=17
+[DEBUG gen_stmt] Node type: 17
